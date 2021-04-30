@@ -1,7 +1,7 @@
 BIN := main
 SOURCE := main.cpp
 CC := g++
-CPPFLAGS := -I. -L./lib
+CPPFLAGS := -I./include -L./lib
 LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system
 
 $(BIN):
