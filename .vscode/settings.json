@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "network.hpp": "c",
+        "header.hpp": "c",
+        "window.hpp": "c"
     }
 }
