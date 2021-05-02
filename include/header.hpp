@@ -1,5 +1,3 @@
-// #ifndef 
-// #define
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -11,9 +9,8 @@
 #include <rapidjson/filereadstream.h>
 #include "rapidjson/document.h"
 
-#define WIDTH 640 
-#define HEIGHT 480
-#define OUTLINE_WIDTH 5
+#define WIDTH 1000
+#define HEIGHT 650
 
 #define PORT 53000
 
@@ -29,7 +26,4 @@ struct Settings {
 
 void die_With_Error(const char *device, const char *error_message);
 void json_parser_create(struct Settings* settings_struct);
-void SFML_GUI(struct Settings settings_struct);
-// void network_func(struct Settings settings_struct);
-
-// #endif
+void network_func(TcpSocket* socket);

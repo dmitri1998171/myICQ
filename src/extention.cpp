@@ -1,5 +1,7 @@
 #include "header.hpp"
 
+#define DEVICE "CLIENT"
+
 void die_With_Error(const char *device, const char *error_message) {
     printf("%s:: ERROR: %s\n", device, error_message);
     FILE *f = fopen("errors.log", "w+");
@@ -27,4 +29,11 @@ void json_parser_create(struct Settings* settings_struct) {
     printf("id = %i\n", settings_struct->id);
 
     fclose(pFile);
+}
+
+void network_func(TcpSocket* socket) {
+    IpAddress server_ip = "127.0.0.1";
+    Socket::Status status = socket->connect(server_ip, PORT);
+    if (status != Socket::Done)
+        die_With_Error(DEVICE, "Failed to connect to server!");
 }
