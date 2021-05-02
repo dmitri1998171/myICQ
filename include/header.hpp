@@ -19,7 +19,7 @@ using namespace std;
 using namespace sf;
 using namespace rapidjson;
 
-void dieWithError(const char *error_message);
+void dieWithError(const char *device, const char *error_message);
 void network_func();
 void SFML_rendering();
 

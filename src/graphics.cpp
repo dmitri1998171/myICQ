@@ -56,7 +56,7 @@ void SFML_rendering() {
 
     text.setPosition(Vector2f(10, output_rect_pos));
 
-    /* Create thread */
+    /* Create a thread */
     // window.setActive(false);
     Thread thread(&outputFunc, thread_struct);
     thread.launch();
