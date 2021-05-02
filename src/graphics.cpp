@@ -1,37 +1,41 @@
 #include "header.hpp"
 
+#define DEVICE "CLIENT"
+
 Mutex mutex;
 
-struct ThreadMain {
-    RenderWindow* window;
+struct GraphicsThread {
     Font font;
+    TcpSocket* socket;
+    RenderWindow* window;
     float output_rect_pos;
-}thread_struct;
+}graph_thread_struct;
 
-void outputFunc(struct ThreadMain thread_struct) {
-    
-    Text text("Enter a message...", thread_struct.font, 14);
-    text.setFillColor(Color(128, 128, 128, 100));
-    text.setStyle(Text::Bold | Text::Underlined);
-    text.setPosition(Vector2f(10, thread_struct.output_rect_pos));
+void outputFunc(struct GraphicsThread graph_thread_struct) {
+    size_t received;
+    String data;
 
-    // thread_struct.window->setActive(true);
-    while (thread_struct.window->isOpen()) {
+    // graph_thread_struct.window->setActive(true);
+    while (graph_thread_struct.window->isOpen()) {
+        if (graph_thread_struct.socket->receive(&data, sizeof(data), received) != Socket::Done)
+            die_With_Error(DEVICE, "Failed to receive a message from the server!");
 
-        // mutex.lock();
-        // mutex.unlock();
-        
+        Text recv_text;
+        recv_text.setFont(graph_thread_struct.font);
+
+        cout << "Received: \"" << data.toAnsiString() << "\" (" << received << " bytes)" << endl;
         sleep(milliseconds(10));
     }
 }
 
-void SFML_rendering() {
-    RenderWindow window(VideoMode(WIDTH, HEIGHT), "myICQ");
-    thread_struct.window = &window;
-
+void SFML_GUI(struct Settings settings_struct) {
+    int write_flag = 0;
     float output_rect_pos = HEIGHT * 0.8;
     float input_rect_pos = HEIGHT - output_rect_pos;
-    thread_struct.output_rect_pos = output_rect_pos;
+    char title[100] = {"myICQ    Username: "};
+
+    strcat(title, settings_struct.username);
+    RenderWindow window(VideoMode(WIDTH, HEIGHT), title);
 
     /* Draw background */
     RectangleShape output_rect(Vector2f(WIDTH - 10, output_rect_pos));
@@ -49,16 +53,28 @@ void SFML_rendering() {
     /* Fonts and texts */
     Font font;
     font.loadFromFile("./media/fonts/CyrilicOld.TTF");
-    thread_struct.font = font;
-    Text text("Enter a message...", font, 14);
+    
+    String message = "Enter a message...";
+    Text text(message, font, 14);
     text.setFillColor(Color(128, 128, 128, 100));
-    text.setStyle(Text::Bold | Text::Underlined);
-
     text.setPosition(Vector2f(10, output_rect_pos));
+
+    /* Network */
+    TcpSocket socket;
+    IpAddress server_ip = "127.0.0.1";
+
+    Socket::Status status = socket.connect(server_ip, PORT);
+    if (status != Socket::Done)
+        die_With_Error(DEVICE, "Failed to connect to server!");
 
     /* Create a thread */
     // window.setActive(false);
-    Thread thread(&outputFunc, thread_struct);
+    graph_thread_struct.font = font;
+    graph_thread_struct.socket = &socket;
+    graph_thread_struct.window = &window;
+    graph_thread_struct.output_rect_pos = output_rect_pos;
+
+    Thread thread(&outputFunc, graph_thread_struct);
     thread.launch();
 
     while (window.isOpen()) {
@@ -66,10 +82,42 @@ void SFML_rendering() {
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) 
                 window.close();
-            if (event.type == Event::KeyPressed) {
-                mutex.lock();
 
-                mutex.unlock();
+            if (Mouse::isButtonPressed(Mouse::Left)) {
+                Vector2i localPosition = Mouse::getPosition(window);
+                if(localPosition.y > output_rect_pos) {
+                    write_flag = 1;
+                    message = "";
+                    text.setString(message);
+                    text.setFillColor(Color::Black);
+                }
+                else {
+                    write_flag = 0;
+                    text.setFillColor(Color(128, 128, 128, 100));
+                    if(message.getSize() == 0) {
+                        message = "Enter a message...";
+                        text.setString(message);
+                    }
+                }
+            }
+
+            if(write_flag == 1) {   // Поле ввода активировано
+                if (event.type == sf::Event::TextEntered) {
+                    if (event.text.unicode < 128) {
+                        cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
+                        message.insert(message.getSize(), event.text.unicode);
+                        text.setString(message);
+                    }
+                }
+
+                if (event.type == Event::KeyPressed) {
+                    if (event.key.code == sf::Keyboard::Enter) {
+                        if (socket.send(&message, sizeof(message)) != Socket::Done)
+                            die_With_Error(DEVICE, "Failed to send a message to server!");
+                        message.clear();
+                        text.setString(message);
+                    } 
+                }
             }
         }  
         
@@ -78,6 +126,5 @@ void SFML_rendering() {
         window.draw(input_rect);
         window.draw(text);
         window.display();
-        // thread.wait();
     }
 }

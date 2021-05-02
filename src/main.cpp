@@ -1,18 +1,12 @@
 #include "header.hpp"
- 
+
 int main() {
-    network_func();
+    struct Settings settings_struct;
 
-    FILE* pFile = fopen("settings.json", "rb");
-    char buffer[65536];
-    FileReadStream is(pFile, buffer, sizeof(buffer));
-    Document document;
-    document.ParseStream<0, UTF8<>, FileReadStream>(is);
+    json_parser_create(&settings_struct);
+    SFML_GUI(settings_struct);
 
-    assert(document["username"].IsString());
-    printf("username = %s\n", document["username"].GetString());
-
-    // SFML_rendering();
+    // network_func(settings_struct);
 
     return 0;
 }

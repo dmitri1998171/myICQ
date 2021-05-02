@@ -2,6 +2,8 @@
 // #define
 #include <iostream>
 #include <cstdio>
+#include <cstdlib>
+#include <string>
 #include <SFML/Network.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -19,8 +21,15 @@ using namespace std;
 using namespace sf;
 using namespace rapidjson;
 
-void dieWithError(const char *device, const char *error_message);
-void network_func();
-void SFML_rendering();
+struct Settings {
+    char username[64];
+    char status[8];
+    int id;
+};
+
+void die_With_Error(const char *device, const char *error_message);
+void json_parser_create(struct Settings* settings_struct);
+void SFML_GUI(struct Settings settings_struct);
+// void network_func(struct Settings settings_struct);
 
 // #endif

@@ -1,6 +1,6 @@
 BIN := main
 SERVER := server
-SOURCE_MAIN := ./src/main.cpp ./src/network.cpp ./src/graphics.cpp
+SOURCE_MAIN := ./src/main.cpp ./src/graphics.cpp #./src/network.cpp
 SOURCE_EXT := extention.cpp 
 SOURCE_SERVER := server_tcp.cpp
 CC := g++
