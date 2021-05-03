@@ -18,11 +18,9 @@ struct networkStruct {
 
 void output_thread_func();
 
-RectangleShape create_backround(float height, float y, Color color) {
-    RectangleShape rect(Vector2f(WIDTH, height));
-    rect.setPosition(Vector2f(0, y));
-    rect.setFillColor(color);
-    return rect;
+void create_rect(RectangleShape *rect, float width, float height, float x, float y) {
+    rect->setSize(Vector2f(width, height));
+    rect->setPosition(Vector2f(x, y));
 }
 
 void text_params_func(Font* font, Text* text, String message, float y) {
@@ -41,17 +39,27 @@ int main() {
     int write_flag = 0;
     float output_rect_pos = HEIGHT * 0.8;
     float input_rect_pos = HEIGHT - output_rect_pos;
+    float sidebar_width = 400;
     char title[100] = {"myICQ    Username: "};
     
     json_parser_create(&settings_struct);
 
     strcat(title, settings_struct.username);
     RenderWindow window(VideoMode(WIDTH, HEIGHT), title);
+    // window.setPosition(Vector2i(VideoMode::width));
 
     /* Draw background */
-    RectangleShape output_rect = create_backround(output_rect_pos, 0, Color(27, 28, 37));
-    RectangleShape input_rect = create_backround(input_rect_pos, output_rect_pos, Color(39, 40, 49));
-    
+    RectangleShape output_rect;
+    RectangleShape input_rect;
+    RectangleShape side_rect;
+
+    create_rect(&output_rect, WIDTH - sidebar_width, HEIGHT, sidebar_width, 0);
+    create_rect(&input_rect, (WIDTH - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
+    create_rect(&side_rect, sidebar_width, HEIGHT, 0, 0);
+    output_rect.setFillColor(Color(27, 28, 37));
+    input_rect.setFillColor(Color(39, 40, 49));
+    side_rect.setFillColor(Color(39, 40, 49));
+
     /* Fonts and texts */
     Font font;
     Text text;
@@ -77,6 +85,37 @@ int main() {
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) 
                 window.close();
+            
+            if (event.type == Event::Resized) {
+                int min_x = 470;
+                int min_y = 600;
+                int sub_min_x = 830;
+                
+                int winX = window.getSize().x;
+                int winY = window.getSize().y;
+
+                if(winX > min_x || winY > min_y) 
+                    window.setSize(Vector2u(winX, winY)); 
+                if(winX < min_x) 
+                    window.setSize(Vector2u(min_x, winY)); 
+                if(winY < min_y) 
+                    window.setSize(Vector2u(winX, min_y)); 
+
+                if(winX < sub_min_x) {
+                    sidebar_width = 0;
+                    output_rect_pos = HEIGHT * 0.8;
+                    side_rect.setSize(Vector2f(0, 0));
+                    create_rect(&output_rect, WIDTH, HEIGHT, 0, 0);
+                    create_rect(&input_rect, WIDTH - 20, input_rect_pos - 20, 10, output_rect_pos + 10);
+                }
+                if(winX > sub_min_x) {
+                    sidebar_width = 400;
+                    output_rect_pos = HEIGHT * 0.8;
+                    create_rect(&output_rect, WIDTH - sidebar_width, HEIGHT, sidebar_width, 0);
+                    create_rect(&input_rect, (WIDTH - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
+                    create_rect(&side_rect, sidebar_width, HEIGHT, 0, 0);
+                }
+            }
 
             if (Mouse::isButtonPressed(Mouse::Left)) {
                 Vector2i localPosition = Mouse::getPosition(window);
@@ -118,6 +157,7 @@ int main() {
         }  
         
         window.clear();
+        window.draw(side_rect);
         window.draw(output_rect);
         window.draw(input_rect);
         window.draw(text);
