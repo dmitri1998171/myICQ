@@ -4,13 +4,19 @@
 
 Mutex mutex;
 
+int sep = 10;
+float output_rect_x, output_rect_y, output_rect_w, output_rect_h;
+float str_length = 50;
+float font_size = 14;
+float string_count = 1;
+
 struct GraphicsThread {
     Font* font;
-    Text* recv_text;
     TcpSocket* socket;
     RenderWindow* window;
     RectangleShape* output_rect;
-    RectangleShape* output_text_rect;
+    Text recv_text[2];
+    RectangleShape output_text_rect[2];
     struct networkStruct net_struct;
     float output_rect_pos;
 }thread_struct;
@@ -78,7 +84,6 @@ int main() {
     RectangleShape output_rect;
     RectangleShape input_rect;
     RectangleShape side_rect;
-    RectangleShape output_text_rect;
 
     create_rect(&output_rect, WIDTH - sidebar_width, HEIGHT, sidebar_width, 0);
     create_rect(&input_rect, (WIDTH - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
@@ -90,7 +95,7 @@ int main() {
     /* Fonts and texts */
     String message = "Enter a message...";
     Text text;
-    Text recv_text;
+    Text recv_text[2];
     Font font;
     font.loadFromFile("./media/fonts/CyrilicOld.TTF");
     Color text_color(128, 128, 128, 100);
@@ -98,16 +103,43 @@ int main() {
     
     /* Network */
     TcpSocket socket;
-    network_func(&socket);
+    // network_func(&socket);
+    
+    /* Dialog history */ 
+    FILE* history;
+    if((history = fopen("history.txt", "r")) == NULL){      // "a+"
+        die_With_Error(DEVICE, "Can't open history.txt");
+    }
+    RectangleShape output_text_rect[2];
+    char *user, *str;
+    int i = 0;
+    while(!feof(history)) {
+        // fscanf(history, "%s", str);
+        fgets(str, 15, history);
+        printf("%s", str);
+        
+        output_rect_x = output_rect.getGlobalBounds().left + 10;
+        output_rect_y = output_rect.getGlobalBounds().top;
+        output_rect_w = strlen(str) * (font_size / 2);
+        output_rect_h = font_size * string_count;
+
+        create_rect(&output_text_rect[i], output_rect_w, output_rect_h + 5, output_rect_x, output_rect_y + sep);
+        output_text_rect[i].setFillColor(Color(34, 52, 79));
+        text_params_func(&font, &recv_text[i], str, Color::Black, output_rect_x + 5, output_rect_y + sep);
+        sep += string_count + 30;
+        i++;
+    }
+    printf("\n");
     
     /* Create a thread */
     // window.setActive(false);
     thread_struct.font = &font;
-    thread_struct.recv_text = &recv_text;
     thread_struct.socket = &socket;
     thread_struct.window = &window;
     thread_struct.output_rect = &output_rect;
-    thread_struct.output_text_rect = &output_text_rect;
+    for(int i = 0; i < 2; i++)
+        thread_struct.output_text_rect[i] = output_text_rect[i];
+        thread_struct.recv_text[i] = recv_text[i];
     thread_struct.net_struct = net_struct;
     thread_struct.output_rect_pos = output_rect_pos;
 
@@ -119,8 +151,10 @@ int main() {
     while (window.isOpen()) {
         Event event;
         while (window.pollEvent(event)) {
-            if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) 
+            if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
+                fclose(history);
                 window.close();
+            }
             
             if (event.type == Event::Resized) {
                 int min_x = 470;
@@ -193,6 +227,7 @@ int main() {
 
                 if (event.type == Event::KeyPressed) {
                     if (event.key.code == Keyboard::Enter) {
+                        fprintf(history, "%s: %s\n", settings_struct.username, message.getData());
                         net_struct.message = message;
                         if (socket.send(&net_struct, sizeof(net_struct)) != Socket::Done)
                             die_With_Error(DEVICE, "Failed to send a message to server!");
@@ -212,20 +247,17 @@ int main() {
         window.draw(side_rect);
         window.draw(output_rect);
         window.draw(input_rect);
-        window.draw(output_text_rect);
         window.draw(text);
-        window.draw(recv_text);
+        for (int i = 0; i < 2; i++) {
+            window.draw(output_text_rect[i]);
+            window.draw(recv_text[i]);
+        }
         window.display();
     }
     return 0;
 }
 
-void output_thread_func() {
-    int sep = 10;
-    float output_rect_x, output_rect_y, output_rect_w;
-    float str_length = 50;
-    float font_size = 14;
-    float string_count = 1;
+void output_thread_func() {    
     size_t received;
 
     // thread_struct.window->setActive(true);
@@ -239,13 +271,13 @@ void output_thread_func() {
 
         output_rect_x = thread_struct.output_rect->getGlobalBounds().left + 10;
         output_rect_y = thread_struct.output_rect->getGlobalBounds().top;
-        output_rect_w = font_size * string_count;
+        output_rect_h = font_size * string_count;
 
-        create_rect(thread_struct.output_text_rect, str_length, output_rect_w + 5, output_rect_x, output_rect_y + sep);
+        create_rect(thread_struct.output_text_rect, str_length, output_rect_h + 5, output_rect_x, output_rect_y + sep);
         thread_struct.output_text_rect->setFillColor(Color(34, 52, 79));
         text_params_func(thread_struct.font, thread_struct.recv_text, thread_struct.net_struct.message, Color::Black, output_rect_x + 5, output_rect_y + sep);
         
-        sep += output_rect_w + 10;
+        sep += output_rect_h + 10;
         sleep(milliseconds(10));
     }
 }

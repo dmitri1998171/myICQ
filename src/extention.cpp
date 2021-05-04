@@ -6,7 +6,7 @@ void die_With_Error(const char *device, const char *error_message) {
     time_t It = time(NULL);
     struct tm *ptr = localtime(&It);
 
-    FILE *f = fopen("errors.log", "w");
+    FILE *f = fopen("errors.log", "a+");
     printf("%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fprintf(f, "%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fclose(f);
@@ -29,7 +29,7 @@ void json_parser_create(struct Settings* settings_struct) {
 
     printf("username = %s\n", settings_struct->username);
     printf("status = %s\n", settings_struct->status);
-    printf("id = %i\n", settings_struct->id);
+    printf("id = %i\n\n", settings_struct->id);
 
     fclose(pFile);
 }
