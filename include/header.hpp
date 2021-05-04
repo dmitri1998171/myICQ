@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <time.h>
 #include <SFML/Network.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -22,6 +23,11 @@ struct Settings {
     char username[64];
     char status[8];
     int id;
+};
+
+struct networkStruct {
+    String message;
+    struct Settings settings_struct;
 };
 
 void die_With_Error(const char *device, const char *error_message);

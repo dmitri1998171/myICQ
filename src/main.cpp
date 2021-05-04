@@ -11,13 +11,9 @@ struct GraphicsThread {
     RenderWindow* window;
     RectangleShape* output_rect;
     RectangleShape* output_text_rect;
+    struct networkStruct net_struct;
     float output_rect_pos;
 }thread_struct;
-
-struct networkStruct {
-    String message;
-    struct Settings settings_struct;
-}net_struct;
 
 void output_thread_func();
 
@@ -34,14 +30,45 @@ void text_params_func(Font* font, Text* text, String message, Color color, float
     text->setPosition(Vector2f(x, y));
 }
 
+String wrapText(sf::String string, unsigned width, const sf::Font &font, unsigned charicterSize, bool bold){
+  unsigned currentOffset = 0;
+  bool firstWord = true;
+  std::size_t wordBegining = 0;
+
+  for (std::size_t pos(0); pos < string.getSize(); ++pos) {
+    auto currentChar = string[pos];
+    if (currentChar == '\n'){
+      currentOffset = 0;
+      firstWord = true;
+      continue;
+    } else if (currentChar == ' ') {
+      wordBegining = pos;
+      firstWord = false;
+    }
+
+    auto glyph = font.getGlyph(currentChar, charicterSize, bold);
+    currentOffset += glyph.advance;
+
+    if (!firstWord && currentOffset > width) {
+      pos = wordBegining;
+      string[pos] = '\n';
+      firstWord = true;
+      currentOffset = 0;
+    }
+  }
+
+  return string;
+}
+
 int main() {
-    struct Settings settings_struct;
     int write_flag = 0;
     float output_rect_pos = HEIGHT * 0.8;
     float input_rect_pos = HEIGHT - output_rect_pos;
     float sidebar_width = 400;
     char title[100] = {"myICQ    Name: "};
-
+    struct Settings settings_struct;
+    struct networkStruct net_struct;
+    
     json_parser_create(&settings_struct);
 
     strcat(title, settings_struct.username);
@@ -81,10 +108,13 @@ int main() {
     thread_struct.window = &window;
     thread_struct.output_rect = &output_rect;
     thread_struct.output_text_rect = &output_text_rect;
+    thread_struct.net_struct = net_struct;
     thread_struct.output_rect_pos = output_rect_pos;
 
     Thread thread(&output_thread_func);
     thread.launch();
+    
+    int lineNumber = 1;
 
     while (window.isOpen()) {
         Event event;
@@ -128,9 +158,11 @@ int main() {
             if (Mouse::isButtonPressed(Mouse::Left)) {
                 Vector2i mouse_pos = Mouse::getPosition(window);
                 if(mouse_pos.y > input_rect.getGlobalBounds().top && mouse_pos.x > input_rect.getGlobalBounds().left) {
+                    if(message == "Enter a message...") {
+                        message.clear();
+                        text.setString(message);
+                    }
                     write_flag = 1;
-                    message = "";
-                    text.setString(message);
                     text.setFillColor(Color::Black);
                 }
                 else {
@@ -145,7 +177,14 @@ int main() {
 
             if(write_flag == 1) {   // Поле ввода активировано
                 if (event.type == Event::TextEntered) {
-                    if (event.text.unicode < 128) {
+                    if (event.text.unicode >= 32 && event.text.unicode <= 126) {
+                        // if (text.getLocalBounds().width > 8) {
+                            // ++lineNumber; 
+                            // message.clear();
+                            // for (int i = 0; i < lineNumber; ++i)
+                                // message += "\n";
+                                // wrapText(message, 8, font, 14, false);
+                        // }
                         cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
                         message.insert(message.getSize(), event.text.unicode);
                         text.setString(message);
@@ -159,7 +198,12 @@ int main() {
                             die_With_Error(DEVICE, "Failed to send a message to server!");
                         message.clear();
                         text.setString(message);
+                        // net_struct.message = message;
                     } 
+                    if(event.key.code == Keyboard::BackSpace && message.getSize() > 0) {
+                        message.erase(message.getSize() - 1);
+                        text.setString(message);
+                    }       
                 }
             }
         }  
@@ -186,10 +230,12 @@ void output_thread_func() {
 
     // thread_struct.window->setActive(true);
     while (thread_struct.window->isOpen()) {
-        if (thread_struct.socket->receive(&net_struct, sizeof(net_struct), received) != Socket::Done)
+        if (thread_struct.socket->receive(&thread_struct.net_struct, sizeof(thread_struct.net_struct), received) != Socket::Done)
+     {
+            cout << "Received: \"" << thread_struct.net_struct.message.toAnsiString() << "\" (" << received << " bytes)" << endl;
+            getchar();
             die_With_Error(DEVICE, "Failed to receive a message from the server!");
-
-        cout << "Received: \"" << net_struct.message.toAnsiString() << "\" (" << received << " bytes)" << endl;
+    }
 
         output_rect_x = thread_struct.output_rect->getGlobalBounds().left + 10;
         output_rect_y = thread_struct.output_rect->getGlobalBounds().top;
@@ -197,7 +243,7 @@ void output_thread_func() {
 
         create_rect(thread_struct.output_text_rect, str_length, output_rect_w + 5, output_rect_x, output_rect_y + sep);
         thread_struct.output_text_rect->setFillColor(Color(34, 52, 79));
-        text_params_func(thread_struct.font, thread_struct.recv_text, net_struct.message, Color::Black, output_rect_x + 5, output_rect_y + sep);
+        text_params_func(thread_struct.font, thread_struct.recv_text, thread_struct.net_struct.message, Color::Black, output_rect_x + 5, output_rect_y + sep);
         
         sep += output_rect_w + 10;
         sleep(milliseconds(10));
