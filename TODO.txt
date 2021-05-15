@@ -19,3 +19,14 @@
     - классы (шаблон "прямоугольник" и наследники: gui, button)
     \/ - фокус на input_rect
     - перенос слов
+
+json:
+    \/ - id
+    \/ - username
+    \/ - status
+
+    - font_size
+
+
+#commit
+    Code review
