@@ -12,6 +12,8 @@
 5) тайлы
 \/ 6) ввод
 \/ 7) вывод
+    \/ - разделение сообщения в истории на username и text
+    \/ - смещение блока с текстом если пишет пользователь
 \/ 8) лог 
 
 *)
@@ -29,4 +31,4 @@ json:
 
 
 #commit
-    Code review
+    Format messages from history and from the input_rect  

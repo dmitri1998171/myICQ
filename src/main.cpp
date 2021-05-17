@@ -6,7 +6,6 @@ Mutex mutex;
 
 int sep = 10;
 int dialog_count = 0;
-float output_rect_x, output_rect_y, output_rect_w, output_rect_h;
 float str_length = 50;
 float font_size = 14;
 float string_count = 1;
@@ -38,30 +37,48 @@ void text_params_func(Font* font, Text *text, String message, Color color, float
     text->setPosition(Vector2f(x, y));
 }
 
-void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char* str) {
+void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char* str, int pos) {
+    int padding = 7;
+    int margin[2] = {5, 10}; // y, x
+    float output_rect_x, output_rect_y, output_rect_w, output_rect_h;
     RectangleShape* pre_output_rect = *output_rect;
     RectangleShape* pre_output_text_rect = *output_text_rect;
     Text* pre_recv_text = *recv_text;
 
-    output_rect_x = pre_output_rect->getGlobalBounds().left + 10;
-    output_rect_y = pre_output_rect->getGlobalBounds().top;
-    output_rect_w = strlen(str) * (font_size / 2);
     output_rect_h = font_size * string_count;
+    // output_rect_w = strlen(str) + 10;
+    // output_rect_w = strlen(str) * font_size;
+    output_rect_w = (strlen(str) * font_size) * 0.5;
+    output_rect_y = pre_output_rect->getGlobalBounds().top;
 
-    create_rect(&pre_output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w, output_rect_h + 5, output_rect_x, output_rect_y + sep);
-    text_params_func(*font, &pre_recv_text[dialog_count], str, Color::White, output_rect_x + 5, output_rect_y + sep);
+    if(pos)
+        output_rect_x = WIDTH - output_rect_w - (margin[1] * 2);
+    else
+        output_rect_x = pre_output_rect->getGlobalBounds().left + margin[1];
+
+    create_rect(&pre_output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w + padding, output_rect_h + margin[0], output_rect_x, output_rect_y + sep);
+    text_params_func(*font, &pre_recv_text[dialog_count], str, Color::White, output_rect_x + padding, output_rect_y + sep);
     
     sep += string_count + 30;
     dialog_count++;
 }
 
-void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text) {
+void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
     if((*history = fopen("history.txt", "r")) != NULL) {
-        char str[STR_SIZE];
+        char raw_str[STR_SIZE];
+        char *username, *str;
+        int pos = 0;
 
-        while (fgets(str, STR_SIZE, *history) != NULL) {
-            printf("%s", str); 
-            draw_message_rect(&font, &output_rect, &output_text_rect, &recv_text, str);
+        while (fgets(raw_str, STR_SIZE, *history) != NULL) {
+            username = strtok(raw_str, ": ");
+            str = strtok(NULL, ": ");
+            
+            if(!strcmp(username, settings_struct->username)) 
+                pos = 1;
+            else 
+                pos = 0;
+
+            draw_message_rect(&font, &output_rect, &output_text_rect, &recv_text, str, pos);
         }
 
         printf("\n");
@@ -133,12 +150,6 @@ int main() {
     /* Network */
     TcpSocket socket;
     network_func(&socket);
-
-    /* Dialog history */ 
-    FILE* history;
-    Text recv_text[STR_SIZE];
-    RectangleShape output_text_rect[STR_SIZE];
-    history_dialog(&history, &font, &output_rect, output_text_rect, recv_text);
     
     /* Create a thread */
     // window.setActive(false);
@@ -146,15 +157,18 @@ int main() {
     thread_struct.socket = &socket;
     thread_struct.window = &window;
     thread_struct.output_rect = &output_rect;
-    for(int i = 0; i < dialog_count; i++) {
-        thread_struct.output_text_rect[i] = output_text_rect[i];
-        thread_struct.recv_text[i] = recv_text[i];
-    }
     thread_struct.net_struct = net_struct;
     thread_struct.output_rect_pos = output_rect_pos;
-
+    
     Thread thread(&output_thread_func);
     thread.launch();
+    
+    /* Dialog history */ 
+    FILE* history;
+    // Text recv_text[STR_SIZE];
+    // RectangleShape output_text_rect[STR_SIZE];
+    history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
+
     
     while (window.isOpen()) {
         Event event;
@@ -262,8 +276,6 @@ int main() {
         for (int i = 0; i < dialog_count; i++) {
             window.draw(thread_struct.output_text_rect[i]);
             window.draw(thread_struct.recv_text[i]);
-            window.draw(output_text_rect[i]);
-            window.draw(recv_text[i]);
         }
         window.display();
     }
@@ -273,9 +285,7 @@ int main() {
 void output_thread_func() {
     size_t received;
     Text* pre_recv_text;
-    RectangleShape* pre_output_rect;
     RectangleShape* pre_output_text_rect;
-    int i = 0;
 
     // thread_struct.window->setActive(true);
     while (thread_struct.window->isOpen()) {
@@ -284,33 +294,13 @@ void output_thread_func() {
         }
         cout << "Received: \"" << thread_struct.net_struct.message.toAnsiString() << "\" (" << received << " bytes)" << endl;
 
-        // pre_recv_text = &thread_struct.recv_text[dialog_count];
-        // pre_output_text_rect = thread_struct.output_text_rect;
-        
-        // draw_message_rect(&thread_struct.font, &thread_struct.output_rect, &pre_output_text_rect, &pre_recv_text, thread_struct.net_struct.message.toAnsiString().c_str());
-
-
-
-
         mutex.lock();
-
-        pre_output_rect = thread_struct.output_rect;
         pre_output_text_rect = thread_struct.output_text_rect;
         pre_recv_text = thread_struct.recv_text;
-
-        output_rect_x = pre_output_rect->getGlobalBounds().left + 10;
-        output_rect_y = pre_output_rect->getGlobalBounds().top;
-        output_rect_w = strlen(thread_struct.net_struct.message.toAnsiString().c_str()) * (font_size / 2);
-        output_rect_h = font_size * string_count;
-
-        // printf("dialog_count: %i\n", dialog_count);
-        create_rect(&thread_struct.output_text_rect[i], Color(34, 52, 79), output_rect_w, output_rect_h + 5, output_rect_x, output_rect_y + sep);
-        text_params_func(thread_struct.font, &pre_recv_text[i], thread_struct.net_struct.message.toAnsiString(), Color::White, output_rect_x + 5, output_rect_y + sep);
         
-        sep += string_count + 30;
-        i++;
-
+        draw_message_rect(&thread_struct.font, &thread_struct.output_rect, &pre_output_text_rect, &pre_recv_text, thread_struct.net_struct.message.toAnsiString().c_str(), 1);
         mutex.unlock();
+
         sleep(milliseconds(10));
     }
 }
