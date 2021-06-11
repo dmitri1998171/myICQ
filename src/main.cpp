@@ -116,6 +116,27 @@ String wrapText(String string, unsigned width, const Font &font, unsigned charic
   return string;
 }
 
+Sprite UI_shedule(string path, int x, int y) {
+    Texture texture;
+    if (!texture.loadFromFile(path)) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    
+    texture.setSmooth(true);
+
+    Sprite sprite(texture);
+    sprite.setPosition(x, y);
+    return sprite;
+}
+
+int getCenter(Sprite img, Text text) {
+    float result = (img.getGlobalBounds().width - text.getGlobalBounds().width) / 2;
+
+    // if (result < 0)
+    //     result *= -1;
+
+    return img.getGlobalBounds().left - result;
+}
+
 int main() {
     int winX, winY;
     int write_flag = 0;
@@ -141,19 +162,71 @@ int main() {
     create_rect(&side_rect, Color(39, 40, 49), sidebar_width, HEIGHT, 0, 0);
 
     /* Fonts and texts */
-    String message = "Enter a message...";
     Text text;
     Font font;
+    String message = "Enter a message...";
     font.loadFromFile("./media/fonts/CyrilicOld.TTF");
     Color text_color(128, 128, 128, 100);
     text_params_func(&font, &text, message, text_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5);
     
+    /*UI*/ 
+    RectangleShape line(Vector2f(sidebar_width, 1.f));
+    line.setPosition(0, HEIGHT - 65);
+
+    Texture contacts_texture;
+    if (!contacts_texture.loadFromFile("./media/icons/contacts.png")) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    contacts_texture.setSmooth(true);
+    
+    Texture chats_texture;
+    if (!chats_texture.loadFromFile("./media/icons/chats.png")) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    chats_texture.setSmooth(true);
+
+    Texture settings_texture;
+    if (!settings_texture.loadFromFile("./media/icons/settings.png")) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    settings_texture.setSmooth(true);
+
+    Texture add_texture;
+    if (!add_texture.loadFromFile("./media/icons/add_chat.png")) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    add_texture.setSmooth(true);
+
+    Texture menu_texture;
+    if (!menu_texture.loadFromFile("./media/icons/menu.png")) 
+        die_With_Error(DEVICE, "Can't load UI icons!");
+    menu_texture.setSmooth(true);
+
+
+    Sprite contacts_button(contacts_texture);
+    contacts_button.setPosition((sidebar_width / 4) - (contacts_button.getGlobalBounds().width / 2), HEIGHT - 55);
+    Text contacts_text;
+    text_params_func(&font, &contacts_text, "contacts", text_color, getCenter(contacts_button, contacts_text), HEIGHT - 25);
+
+    Sprite chats_button(chats_texture);
+    chats_button.setPosition(((sidebar_width / 4) * 2) - (chats_button.getGlobalBounds().width / 2), HEIGHT - 55);
+    Text chats_text;
+    text_params_func(&font, &chats_text, "chats", text_color, chats_button.getGlobalBounds().left - 5, HEIGHT - 25);
+
+    Sprite settings_button(settings_texture);
+    settings_button.setPosition(((sidebar_width / 4) * 3) - (settings_button.getGlobalBounds().width / 2), HEIGHT - 55);
+    Text settings_text;
+    text_params_func(&font, &settings_text, "settings", text_color, getCenter(settings_button, settings_text), HEIGHT - 25);
+
+    Sprite add_button(add_texture);
+    add_button.setPosition(sidebar_width - add_button.getGlobalBounds().width, 5);
+
+    Sprite menu_button(menu_texture);
+    menu_button.setPosition(0, 5);
+
+    // Sprite settings_ui = UI_shedule("./media/icons/settings.png", sidebar_width - 50, HEIGHT - 55);
+
     /* Network */
     TcpSocket socket;
     network_func(&socket);
     
     /* Create the thread */
-    // window.setActive(false);
     thread_struct.font = &font;
     thread_struct.socket = &socket;
     thread_struct.window = &window;
@@ -172,7 +245,6 @@ int main() {
         Event event;
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
-                fclose(history);
                 window.close();
                 exit(0);
             }
@@ -286,7 +358,19 @@ int main() {
         window.draw(output_rect);
         window.draw(input_rect);
         window.draw(side_rect);
+
         window.draw(text);
+        window.draw(settings_text);
+        window.draw(chats_text);
+        window.draw(contacts_text);
+
+        window.draw(settings_button);
+        window.draw(chats_button);
+        window.draw(contacts_button);
+        window.draw(add_button);
+        window.draw(menu_button);
+        window.draw(line);
+
         for (int i = 0; i < dialog_count; i++) {
             window.draw(thread_struct.output_text_rect[i]);
             window.draw(thread_struct.recv_text[i]);
@@ -304,7 +388,6 @@ void output_thread_func() {
 	Packet receivePacket;
     String receive;
 
-    // thread_struct.window->setActive(true);
     while (thread_struct.window->isOpen()) {
         if (thread_struct.socket->receive(receivePacket) != Socket::Done) {
             die_With_Error(DEVICE, "Failed to receive a message from the server!");
