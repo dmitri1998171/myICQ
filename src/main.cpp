@@ -37,7 +37,7 @@ void text_params_func(Font* font, Text *text, String message, Color color, float
     text->setPosition(Vector2f(x, y));
 }
 
-void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char* str, int pos) {
+void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char *str, int pos) {
     int padding_x = 7, margin_x = 0, margin_y = 5; 
     float output_rect_x, output_rect_y, output_rect_w, output_rect_h;
     RectangleShape* pre_output_rect = *output_rect;
@@ -45,16 +45,14 @@ void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape
     Text* pre_recv_text = *recv_text;
 
     output_rect_h = font_size * string_count;
-    // output_rect_w = strlen(str) + 10;
-    // output_rect_w = strlen(str) * font_size;
-    output_rect_w = (strlen(str) * font_size) * 0.5;
     output_rect_y = pre_output_rect->getGlobalBounds().top;
+    output_rect_w = (strlen(str) * font_size) * 0.5;
 
-    if(pos)
+    if(pos) 
         output_rect_x = (pre_output_rect->getSize().x + sidebar_width) - output_rect_w - margin_x;
-    else
+    else 
         output_rect_x = pre_output_rect->getGlobalBounds().left + margin_x;
-
+    
     create_rect(&pre_output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w, output_rect_h + margin_y, output_rect_x, output_rect_y + sep);
     text_params_func(*font, &pre_recv_text[dialog_count], str, Color::White, output_rect_x + padding_x, output_rect_y + sep);
     
@@ -63,28 +61,29 @@ void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape
 }
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
-    if((*history = fopen("history.txt", "r")) != NULL) {
-        char raw_str[STR_SIZE];
-        char *username, *str;
-        int pos = 0;
-        sep = 10;
-        dialog_count = 0;
+    ifstream in("history.txt"); 
+    if (in.is_open()) {
+        string line;
+        char *str;
+        int pos = 0;    // Позиция сообщения на экране (справа или слева)
+        sep = 10, dialog_count = 0;
 
-        while (fgets(raw_str, STR_SIZE, *history) != NULL) {
-            username = strtok(raw_str, ": ");
-            str = strtok(NULL, ": ");
-            
-            if(!strcmp(username, settings_struct->username)) 
+        while (getline(in, line)) {        
+            str = strdup(line.c_str());
+            str = strtok(str, ": ");
+
+            if(!strcmp(str, settings_struct->username)) 
                 pos = 1;
             else 
                 pos = 0;
 
+            str = strtok(NULL, ":");
             draw_message_rect(&font, &output_rect, &output_text_rect, &recv_text, str, pos);
         }
 
-        printf("\n");
-        fclose(*history);
     }
+    printf("\n");
+    in.close();
 }
 
 String wrapText(String string, unsigned width, const Font &font, unsigned charicterSize, bool bold){
@@ -126,6 +125,7 @@ int main() {
     char title[100] = {"myICQ    Name: "};
     struct Settings settings_struct;
     struct networkStruct net_struct;
+    Packet sendPacket;
     
     json_parser_create(&settings_struct);
 
@@ -240,7 +240,7 @@ int main() {
                 }
             }
 
-            if(write_flag == 1) {   // Поле ввода активировано
+            if(write_flag) {   // Поле ввода активировано
                 if (event.type == Event::TextEntered) {
                     if (event.text.unicode >= 32 && event.text.unicode <= 126) {
                         // if (text.getLocalBounds().width > 8) {
@@ -260,11 +260,16 @@ int main() {
                 if (event.type == Event::KeyPressed) {
                     if (event.key.code == Keyboard::Enter) {
                         cout << "message: " << message.toAnsiString() << endl;
+                        message.insert(message.getSize(), " ");
                         // if(history != NULL)
                         //     fprintf(history, "%s: %s\n", settings_struct.username, message.getData());
                         net_struct.message = message;
-                        if (socket.send(&net_struct, sizeof(net_struct)) != Socket::Done)
+                        sendPacket << message;
+
+                        if (socket.send(sendPacket) != Socket::Done)
                             die_With_Error(DEVICE, "Failed to send a message to server!");
+                        
+                        sendPacket.clear();
                         message.clear();
                         text.setString(message);
                     } 
@@ -288,6 +293,7 @@ int main() {
         }
         window.display();
     }
+    // thread.wait();
     return 0;
 }
 
@@ -295,19 +301,24 @@ void output_thread_func() {
     size_t received;
     Text* pre_recv_text;
     RectangleShape* pre_output_text_rect;
+	Packet receivePacket;
+    String receive;
 
     // thread_struct.window->setActive(true);
     while (thread_struct.window->isOpen()) {
-        if (thread_struct.socket->receive(&thread_struct.net_struct, sizeof(thread_struct.net_struct), received) != Socket::Done) {
+        if (thread_struct.socket->receive(receivePacket) != Socket::Done) {
             die_With_Error(DEVICE, "Failed to receive a message from the server!");
         }
-        cout << "Received: \"" << thread_struct.net_struct.message.toAnsiString() << "\" (" << received << " bytes)" << endl;
+
+		receivePacket >> receive;
+
+        cout << "Received: \"" << receive.toAnsiString() << "\" (" << receive.getSize() << " bytes)" << endl;
 
         mutex.lock();
         pre_output_text_rect = thread_struct.output_text_rect;
         pre_recv_text = thread_struct.recv_text;
         
-        draw_message_rect(&thread_struct.font, &thread_struct.output_rect, &pre_output_text_rect, &pre_recv_text, thread_struct.net_struct.message.toAnsiString().c_str(), 1);
+        draw_message_rect(&thread_struct.font, &thread_struct.output_rect, &pre_output_text_rect, &pre_recv_text, receive.toAnsiString().c_str(), 1);
         mutex.unlock();
 
         sleep(milliseconds(10));

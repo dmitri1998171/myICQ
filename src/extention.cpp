@@ -10,7 +10,7 @@ void die_With_Error(const char *device, const char *error_message) {
     printf("%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fprintf(f, "%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fclose(f);
-    // exit(1);
+    exit(1);
 }
 
 void json_parser_create(struct Settings* settings_struct) {

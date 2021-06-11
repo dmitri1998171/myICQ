@@ -1,2 +1,8 @@
 dmitry: hello
 friend: hi
+friend: what's up?
+dmitry: I'm fine. You?
+friend: me too
+dmitry: Do you want to go to the cinema with me?
+friend: yup
+dmitry: cool

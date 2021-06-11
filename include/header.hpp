@@ -1,7 +1,9 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
+#include <fstream>
 #include <time.h>
 #include <SFML/Network.hpp>
 #include <SFML/System.hpp>
