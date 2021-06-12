@@ -1,14 +1,9 @@
 #include "header.hpp"
+#include "vars.hpp"
 
 #define DEVICE "CLIENT"
 #define STR_SIZE 256
 Mutex mutex;
-
-int sep, dialog_count;
-int sidebar_width = 400;
-float str_length = 50;
-float font_size = 14;
-float string_count = 1;
 
 struct GraphicsThread {
     Font* font;
@@ -17,138 +12,29 @@ struct GraphicsThread {
     RectangleShape* output_rect;
     RectangleShape output_text_rect[STR_SIZE];
     Text recv_text[STR_SIZE];
-    struct networkStruct net_struct;
     float output_rect_pos;
 }thread_struct;
 
 void output_thread_func();
 
-void create_rect(RectangleShape *rect, Color color, float width, float height, float x, float y) {
-    rect->setSize(Vector2f(width, height));
-    rect->setPosition(Vector2f(x, y));
-    rect->setFillColor(Color(color));
-}
-
-void text_params_func(Font* font, Text *text, String message, Color color, float x, float y) {
-    text->setFont(*font);
-    text->setCharacterSize(14);
-    text->setString(message);
-    text->setFillColor(Color(color));
-    text->setPosition(Vector2f(x, y));
-}
-
-void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char *str, int pos) {
-    int padding_x = 7, margin_x = 0, margin_y = 5; 
-    float output_rect_x, output_rect_y, output_rect_w, output_rect_h;
-    RectangleShape* pre_output_rect = *output_rect;
-    RectangleShape* pre_output_text_rect = *output_text_rect;
-    Text* pre_recv_text = *recv_text;
-
-    output_rect_h = font_size * string_count;
-    output_rect_y = pre_output_rect->getGlobalBounds().top;
-    output_rect_w = (strlen(str) * font_size) * 0.5;
-
-    if(pos) 
-        output_rect_x = (pre_output_rect->getSize().x + sidebar_width) - output_rect_w - margin_x;
-    else 
-        output_rect_x = pre_output_rect->getGlobalBounds().left + margin_x;
-    
-    create_rect(&pre_output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w, output_rect_h + margin_y, output_rect_x, output_rect_y + sep);
-    text_params_func(*font, &pre_recv_text[dialog_count], str, Color::White, output_rect_x + padding_x, output_rect_y + sep);
-    
-    sep += string_count + 30;
-    dialog_count++;
-}
-
-void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
-    ifstream in("history.txt"); 
-    if (in.is_open()) {
-        string line;
-        char *str;
-        int pos = 0;    // Позиция сообщения на экране (справа или слева)
-        sep = 10, dialog_count = 0;
-
-        while (getline(in, line)) {        
-            str = strdup(line.c_str());
-            str = strtok(str, ": ");
-
-            if(!strcmp(str, settings_struct->username)) 
-                pos = 1;
-            else 
-                pos = 0;
-
-            str = strtok(NULL, ":");
-            draw_message_rect(&font, &output_rect, &output_text_rect, &recv_text, str, pos);
-        }
-
-    }
-    printf("\n");
-    in.close();
-}
-
-String wrapText(String string, unsigned width, const Font &font, unsigned charicterSize, bool bold){
-  unsigned currentOffset = 0;
-  bool firstWord = true;
-  std::size_t wordBegining = 0;
-
-  for (std::size_t pos(0); pos < string.getSize(); ++pos) {
-    auto currentChar = string[pos];
-    if (currentChar == '\n'){
-      currentOffset = 0;
-      firstWord = true;
-      continue;
-    } else if (currentChar == ' ') {
-      wordBegining = pos;
-      firstWord = false;
-    }
-
-    auto glyph = font.getGlyph(currentChar, charicterSize, bold);
-    currentOffset += glyph.advance;
-
-    if (!firstWord && currentOffset > width) {
-      pos = wordBegining;
-      string[pos] = '\n';
-      firstWord = true;
-      currentOffset = 0;
-    }
-  }
-
-  return string;
-}
-
-Sprite UI_shedule(string path, int x, int y) {
-    Texture texture;
-    if (!texture.loadFromFile(path)) 
-        die_With_Error(DEVICE, "Can't load UI icons!");
-    
-    texture.setSmooth(true);
-
-    Sprite sprite(texture);
-    sprite.setPosition(x, y);
-    return sprite;
-}
-
-int getCenter(Sprite img, Text text) {
-    float result = (img.getGlobalBounds().width - text.getGlobalBounds().width) / 2;
-
-    // if (result < 0)
-    //     result *= -1;
-
-    return img.getGlobalBounds().left - result;
-}
+int sidebar_width;
+int sep, dialog_count;
+float font_size;
 
 int main() {
     int winX, winY;
     int write_flag = 0;
     int min_x = 470, min_y = 600, sub_min_x = 830;
-    float output_rect_pos = HEIGHT * 0.8;
+    float output_rect_pos = HEIGHT * 0.9;
     float input_rect_pos = HEIGHT - output_rect_pos;
     char title[100] = {"myICQ    Name: "};
     struct Settings settings_struct;
-    struct networkStruct net_struct;
     Packet sendPacket;
     
     json_parser_create(&settings_struct);
+    
+    sidebar_width = 400;
+    font_size = settings_struct.font_size;
 
     strcat(title, settings_struct.username);
     RenderWindow window(VideoMode(WIDTH, HEIGHT), title);
@@ -167,7 +53,7 @@ int main() {
     String message = "Enter a message...";
     font.loadFromFile("./media/fonts/CyrilicOld.TTF");
     Color text_color(128, 128, 128, 100);
-    text_params_func(&font, &text, message, text_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5);
+    text_params_func(&font, &text, message, text_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + (input_rect.getGlobalBounds().height / 4));
     
     /*UI*/ 
     RectangleShape line(Vector2f(sidebar_width, 1.f));
@@ -231,7 +117,6 @@ int main() {
     thread_struct.socket = &socket;
     thread_struct.window = &window;
     thread_struct.output_rect = &output_rect;
-    thread_struct.net_struct = net_struct;
     thread_struct.output_rect_pos = output_rect_pos;
     
     Thread thread(&output_thread_func);
@@ -335,7 +220,6 @@ int main() {
                         message.insert(message.getSize(), " ");
                         // if(history != NULL)
                         //     fprintf(history, "%s: %s\n", settings_struct.username, message.getData());
-                        net_struct.message = message;
                         sendPacket << message;
 
                         if (socket.send(sendPacket) != Socket::Done)

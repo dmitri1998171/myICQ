@@ -2,11 +2,20 @@
 
 #define DEVICE "SERVER"
 
+void die_With_Error(const char *device, const char *error_message) {
+    time_t It = time(NULL);
+    struct tm *ptr = localtime(&It);
+
+    FILE *f = fopen("errors.log", "a+");
+    printf("%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
+    fprintf(f, "%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
+    fclose(f);
+    exit(1);
+}
+
 int main() {
-    struct networkStruct net_struct;
     TcpSocket client;
     TcpListener listener;
-    // size_t received;
     Packet packet;
     
 
@@ -19,8 +28,6 @@ int main() {
     while (true) {
         if (client.receive(packet) != Socket::Done)
             die_With_Error(DEVICE, "Failed to receive a message from the client!");
-
-        // cout << "username: " << net_struct.settings_struct.username << "\nmessage: \"" << net_struct.message.toAnsiString() << "\" (" << received << " bytes)\n";
 
         if (client.send(packet) != Socket::Done)
             die_With_Error(DEVICE, "Failed to send a message to client!");
