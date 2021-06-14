@@ -44,5 +44,7 @@ void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, Rec
 void create_rect(RectangleShape *rect, Color color, float width, float height, float x, float y);
 void text_params_func(Font* font, Text *text, String message, Color color, float x, float y);
 void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char *str, int pos);
+void texture_loader(Texture* texture, string path);
+Sprite UI_shedule(Texture* texture, string path, float x, float y);
 
 #endif

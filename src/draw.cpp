@@ -38,14 +38,16 @@ void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape
     dialog_count++;
 }
 
-Sprite UI_shedule(string path, int x, int y) {
-    Texture texture;
-    if (!texture.loadFromFile(path)) 
+void texture_loader(Texture* texture, string path) {
+    if (!texture->loadFromFile(path)) 
         die_With_Error(DEVICE, "Can't load UI icons!");
-    
-    texture.setSmooth(true);
+    texture->setSmooth(true);
+}
 
-    Sprite sprite(texture);
+Sprite UI_shedule(Texture* texture, string path, float x, float y) {
+    texture_loader(texture, path);
+
+    Sprite sprite(*texture);
     sprite.setPosition(x, y);
     return sprite;
 }

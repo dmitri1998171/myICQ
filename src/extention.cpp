@@ -10,6 +10,7 @@ void die_With_Error(const char *device, const char *error_message) {
     printf("%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fprintf(f, "%s - %s - ERROR: %s\n", device, asctime(ptr), error_message);
     fclose(f);
+    getchar();
     exit(1);
 }
 
