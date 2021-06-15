@@ -24,6 +24,7 @@ int sidebar_width;
 int sep, dialog_count;
 float font_size;
 int state = CHAT_STATE;
+int menu_flag = 0;
 
 Texture settings_texture, 
 chats_texture,
@@ -69,6 +70,9 @@ int main() {
     char title[100] = {"myICQ    Name: "};
     struct Settings settings_struct;
     Packet sendPacket;
+    Color line_color = Color(128, 128, 128);
+    Color output_color = Color(27, 28, 37);
+    Color sidebar_color = Color(39, 40, 49);
     
     json_parser_create(&settings_struct);
     
@@ -81,10 +85,10 @@ int main() {
 /* Draw background */
     RectangleShape background, output_rect, input_rect, side_rect;
 
-    create_rect(&background, Color(27, 28, 37), WIDTH, HEIGHT, 0, 0);
-    create_rect(&output_rect, Color(27, 28, 37), (WIDTH - sidebar_width) - 20, output_rect_pos - 10, sidebar_width + 10, 10);
-    create_rect(&input_rect, Color(39, 40, 49), (WIDTH - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
-    create_rect(&side_rect, Color(39, 40, 49), sidebar_width, HEIGHT, 0, 0);
+    create_rect(&background, output_color, WIDTH, HEIGHT, 0, 0);
+    create_rect(&output_rect, output_color, (WIDTH - sidebar_width) - 20, output_rect_pos - 10, sidebar_width + 10, 10);
+    create_rect(&input_rect, sidebar_color, (WIDTH - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
+    create_rect(&side_rect, sidebar_color, sidebar_width, HEIGHT, 0, 0);
 
 /* Fonts and texts */
     Text text;
@@ -95,9 +99,10 @@ int main() {
     text_params_func(&font, &text, message, text_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + (input_rect.getGlobalBounds().height / 4));
     
 /*UI*/ 
-    RectangleShape line(Vector2f(sidebar_width, 1.f));
-    line.setPosition(0, HEIGHT - 65);
+    RectangleShape line;
+    create_rect(&line, line_color, sidebar_width, 1, 0, HEIGHT - 65);
 
+// add sidebar buttons
     texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
     texture_loader(&chats_texture, "./media/icons/chats.png");
     texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
@@ -113,6 +118,52 @@ int main() {
     text_params_func(&font, &settings_text, "settings", text_color, getCenter(settings_button, settings_text), settings_button.getGlobalBounds().top + settings_button.getGlobalBounds().height);
     text_params_func(&font, &chats_text, "chats", text_color, getCenter(chats_button, chats_text) + 15, chats_button.getGlobalBounds().top + chats_button.getGlobalBounds().height);
     text_params_func(&font, &contacts_text, "contacts", text_color, getCenter(contacts_button, contacts_text), contacts_button.getGlobalBounds().top + contacts_button.getGlobalBounds().height);
+
+// menu button
+
+    RectangleShape menu, 
+    menu_add_contact, 
+    menu_add_group, 
+    menu_add_channel, 
+    menu_read_all, 
+    menu_line;
+    
+    Texture menu_add_contact_texture,
+    menu_add_group_texture,
+    menu_add_channel_texture,
+    menu_read_all_texture;
+
+    Sprite menu_add_contact_sprite,
+    menu_add_group_sprite,
+    menu_add_channel_sprite,
+    menu_read_all_sprite;
+
+    Text add_contact_text, add_group_text, add_channel_text, read_all_text;
+
+    int menu_x = 5, menu_y = 5, menu_w = 160, menu_h = 200;
+    int menu_button_h = (menu_h / 4);
+
+    menu_add_contact_sprite = UI_shedule(&menu_add_contact_texture, "./media/icons/menu/menu_add_contact.png", menu_x + 10, menu_y + 10);
+    menu_add_group_sprite = UI_shedule(&menu_add_group_texture, "./media/icons/menu/menu_add_group.png", menu_x + 10, menu_y + 10 + menu_button_h);
+    menu_add_channel_sprite = UI_shedule(&menu_add_channel_texture, "./media/icons/menu/menu_add_channel.png", menu_x + 10, menu_y + 10 + (menu_button_h * 2));
+    menu_read_all_sprite = UI_shedule(&menu_read_all_texture, "./media/icons/menu/menu_read_all.png", menu_x + 10, menu_y + 10 + (menu_button_h * 3));
+
+    create_rect(&menu, sidebar_color, menu_w, menu_h, menu_x, menu_y);
+    create_rect(&menu_line, line_color, menu_w, 1, menu_x, menu_button_h * 3);
+    menu.setOutlineThickness(0.5);
+    menu.setOutlineColor(line_color);
+
+    // Color test_color = Color::White;
+    create_rect(&menu_add_contact, sidebar_color, menu_w, menu_button_h, menu_x, menu_y);
+    create_rect(&menu_add_group, sidebar_color, menu_w, menu_button_h, menu_x, menu_y + menu_button_h);
+    create_rect(&menu_add_channel, sidebar_color, menu_w, menu_button_h, menu_x, menu_y + menu_button_h * 2);
+    create_rect(&menu_read_all, sidebar_color, menu_w, menu_button_h, menu_x, menu_button_h * 3);
+
+    int m_i_w = menu_add_contact_sprite.getGlobalBounds().width * 2;
+    text_params_func(&font, &add_contact_text, "Add contact", line_color, menu_x + m_i_w, getCenter_y(menu_add_contact, add_contact_text));
+    text_params_func(&font, &add_group_text, "Add group", line_color, menu_x + m_i_w, getCenter_y(menu_add_group, add_group_text) + menu_button_h);
+    text_params_func(&font, &add_channel_text, "Add channel", line_color, menu_x + m_i_w, getCenter_y(menu_add_channel, add_channel_text) + (menu_button_h * 2));
+    text_params_func(&font, &read_all_text, "Read all", line_color, menu_x + m_i_w, getCenter_y(menu_read_all, read_all_text) + (menu_button_h * 3));
 
 /* Network */
     TcpSocket socket;
@@ -153,8 +204,8 @@ int main() {
                     sidebar_width = 0;
                     
                     side_rect.setSize(Vector2f(0, 0));
-                    create_rect(&output_rect, Color(27, 28, 37), winX - 20, output_rect_pos - 10, 10, 10);
-                    create_rect(&input_rect, Color(39, 40, 49), winX - 20, input_rect_pos - 20, 10, output_rect_pos + 10);
+                    create_rect(&output_rect, output_color, winX - 20, output_rect_pos - 10, 10, 10);
+                    create_rect(&input_rect, sidebar_color, winX - 20, input_rect_pos - 20, 10, output_rect_pos + 10);
                     text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
                 }
@@ -164,10 +215,10 @@ int main() {
                     sidebar_width = 400;
                     output_rect_pos = winY - input_rect_pos;
 
-                    create_rect(&background, Color(27, 28, 37), winX, winY, 0, 0);
-                    create_rect(&output_rect, Color(27, 28, 37), winX - sidebar_width - 20, output_rect_pos - 10, sidebar_width + 10, 10);
-                    create_rect(&input_rect, Color(39, 40, 49), (winX - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
-                    create_rect(&side_rect, Color(39, 40, 49), sidebar_width, winY, 0, 0);
+                    create_rect(&background, output_color, winX, winY, 0, 0);
+                    create_rect(&output_rect, output_color, winX - sidebar_width - 20, output_rect_pos - 10, sidebar_width + 10, 10);
+                    create_rect(&input_rect, sidebar_color, (winX - sidebar_width) - 20, input_rect_pos - 20, sidebar_width + 10, output_rect_pos + 10);
+                    create_rect(&side_rect, sidebar_color, sidebar_width, winY, 0, 0);
                     text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     thread_struct.output_rect = &output_rect;
                     history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
@@ -188,6 +239,8 @@ int main() {
                 // printf("mouse_x: %i\tmouse_y: %i\n", mouse_pos.x, mouse_pos.y);
 
                 write_flag = 0;
+                menu_flag = 0;
+
                 text.setFillColor(Color(128, 128, 128, 100));
                 if(message.getSize() == 0) {
                     message = "Enter a message...";
@@ -212,7 +265,8 @@ int main() {
                 click_check(menu_mode_func, &menu_button, mouse_pos.x, mouse_pos.y);
             }
 
-            if(write_flag) {   // Поле ввода активировано
+        // input_rect is active
+            if(write_flag) {   
                 if (event.type == Event::TextEntered) {
                     if (event.text.unicode >= 32 && event.text.unicode <= 126) {
                         // if (text.getLocalBounds().width > 8) {
@@ -268,6 +322,25 @@ int main() {
         window.draw(chats_text);
         window.draw(contacts_text);
 
+        if(menu_flag) {
+            window.draw(menu);
+            window.draw(menu_add_contact);
+            window.draw(menu_add_group);
+            window.draw(menu_add_channel);
+            window.draw(menu_read_all);
+            window.draw(menu_line);
+
+            window.draw(add_contact_text);
+            window.draw(add_group_text);
+            window.draw(add_channel_text);
+            window.draw(read_all_text);
+
+            window.draw(menu_add_contact_sprite);
+            window.draw(menu_add_group_sprite);
+            window.draw(menu_add_channel_sprite);
+            window.draw(menu_read_all_sprite);
+        }
+
         switch(state) {
             case CHAT_STATE:
                 window.draw(input_rect);
@@ -319,7 +392,7 @@ void add_mode_func() {
 
 void menu_mode_func() {
     cout << "menu_mode_func" << endl;
-
+    menu_flag = 1;
 }
 
 

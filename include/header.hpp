@@ -39,6 +39,7 @@ void die_With_Error(const char *device, const char *error_message);
 void json_parser_create(struct Settings* settings_struct);
 void network_func(TcpSocket* socket);
 int getCenter(Sprite img, Text text);
+int getCenter_y(RectangleShape img, Text text);
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct);
 
 void create_rect(RectangleShape *rect, Color color, float width, float height, float x, float y);

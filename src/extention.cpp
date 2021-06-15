@@ -47,6 +47,11 @@ void network_func(TcpSocket* socket) {
 
 int getCenter(Sprite img, Text text) {
     return img.getGlobalBounds().left - (img.getGlobalBounds().width - text.getGlobalBounds().width) / 2;
+    // return ((text.getGlobalBounds().width - img.getGlobalBounds().width) / 2);// - (text.getString().getSize() / 2);
+}
+
+int getCenter_y(RectangleShape img, Text text) {
+    return ((img.getGlobalBounds().height - text.getGlobalBounds().height) / 2) - (font_size / 2);
 }
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
