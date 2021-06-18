@@ -23,47 +23,13 @@ struct GraphicsThread {
 int sidebar_width;
 int sep, dialog_count;
 float font_size;
-int state = CHAT_STATE;
-int menu_flag, chat_add_flag, contact_add_flag = 0;
-
-Texture settings_texture, 
-chats_texture,
-contacts_texture,
-add_chat_texture,
-add_contact_texture,
-menu_texture;
-
-Texture settings_active_texture, 
-chats_active_texture,
-contacts_active_texture,
-add_chat_active_texture,
-add_contact_active_texture,
-menu_active_texture;
-
-Sprite settings_button, 
-chats_button,
-contacts_button,
-add_button,
-menu_button;
 
 void output_thread_func();
 
-void settings_mode_func();
-void chat_mode_func();
-void contacts_mode_func();
-void add_mode_func();
-void menu_mode_func();
-
-void click_check(void func(), Sprite* sprite, int mouse_x, int mouse_y) {
-    if(mouse_y > sprite->getGlobalBounds().top && mouse_y < sprite->getGlobalBounds().height + sprite->getGlobalBounds().top) 
-        if(mouse_x > sprite->getGlobalBounds().left && mouse_x < sprite->getGlobalBounds().width + sprite->getGlobalBounds().left) {
-            func();
-        }
-}
-
 int main() {
-    int winX, winY;
-    int write_flag = 0;
+    int winX = 0, winY = 0;
+    int state = CHAT_STATE;
+    int write_flag = 0, menu_flag = 0, add_chat_flag = 0, contact_add_flag = 0;
     int min_x = 470, min_y = 600, sub_min_x = 830;
     float output_rect_pos = HEIGHT * 0.9;
     float input_rect_pos = HEIGHT - output_rect_pos  - 20;
@@ -108,6 +74,15 @@ int main() {
 
 
 // add sidebar buttons
+    Texture settings_texture, chats_texture, contacts_texture,
+    add_chat_texture, add_contact_texture, menu_texture;
+
+    Texture settings_active_texture, chats_active_texture, contacts_active_texture,
+    add_chat_active_texture, add_contact_active_texture, menu_active_texture;
+
+    Sprite settings_button, chats_button, contacts_button,
+    add_button, menu_button;
+
     texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
     texture_loader(&chats_texture, "./media/icons/chats.png");
     texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
@@ -144,7 +119,7 @@ int main() {
 
     Text add_contact_text, add_group_text, add_channel_text, read_all_text;
 
-    int menu_x = 5, menu_y = 5, menu_w = 160, menu_h = 200;
+    int menu_x = 45, menu_y = 5, menu_w = 160, menu_h = 200;
     int menu_button_h = (menu_h / 4);
 
 
@@ -240,36 +215,89 @@ int main() {
             }
 
         /* Collision cursor with UI */ 
-            if (Mouse::isButtonPressed(Mouse::Left)) {
-                Vector2i mouse_pos = Mouse::getPosition(window);
-                // printf("mouse_x: %i\tmouse_y: %i\n", mouse_pos.x, mouse_pos.y);
+            if(event.type == Event::MouseButtonReleased) 
+                if(event.mouseButton.button == Mouse::Left) {
+                    Vector2i mouse_pos = Mouse::getPosition(window);
+                    // printf("mouse_x: %i\tmouse_y: %i\n", mouse_pos.x, mouse_pos.y);
 
-                write_flag = 0;
-                menu_flag = 0;
-
-                text.setFillColor(Color(128, 128, 128, 100));
-                if(message.getSize() == 0) {
-                    message = "Enter a message...";
-                    text.setString(message);
-                }
-                
-            // input_rect
-                if(mouse_pos.y > input_rect.getGlobalBounds().top && mouse_pos.x > input_rect.getGlobalBounds().left) {
-                    if(message == "Enter a message...") {
-                        message.clear();
+                    text.setFillColor(line_color);
+                    if(message.getSize() == 0) {
+                        message = "Enter a message...";
                         text.setString(message);
                     }
-                    write_flag = 1;
-                    text.setFillColor(Color::White);
-                }
+                    
+                // input_rect
+                    if(state == CHAT_STATE && input_rect.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        if(message == "Enter a message...") {
+                            message.clear();
+                            text.setString(message);
+                        }
+                        write_flag = 1;
+                        text.setFillColor(Color::White);
+                    }
+                    else
+                        write_flag = 0;
 
-            // Buttons
-                click_check(settings_mode_func, &settings_button, mouse_pos.x, mouse_pos.y);
-                click_check(chat_mode_func, &chats_button, mouse_pos.x, mouse_pos.y);
-                click_check(contacts_mode_func, &contacts_button, mouse_pos.x, mouse_pos.y);
-                click_check(add_mode_func, &add_button, mouse_pos.x, mouse_pos.y);
-                click_check(menu_mode_func, &menu_button, mouse_pos.x, mouse_pos.y);
-            }
+                // Sidebar buttons
+                    if(settings_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        cout << "SETTINGS_STATE" << endl;
+                        state = SETTINGS_STATE;
+                    }
+                    if(chats_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        cout << "CHAT_STATE" << endl;
+                        state = CHAT_STATE;
+                    }
+                    if(contacts_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        cout << "CONTACTS_STATE" << endl;
+                        state = CONTACTS_STATE;
+                    }
+
+                // Add chat button
+                    if(add_chat_flag) {
+                        if(menu_add_contact.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "add contact" << endl;
+                        }
+                        if(menu_add_group.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "add group" << endl;
+                        }
+                        if(menu_add_channel.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "add channel" << endl;
+                        }
+                        if(menu_read_all.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "read all" << endl;
+                        }
+                    }
+
+                    if(add_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        cout << "add_chat_button" << endl;
+                        add_chat_flag++;
+                    }
+                    else
+                        add_chat_flag = 0;
+
+                // Menu button
+                    if(menu_flag) {
+                        if(menu_add_contact.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "menu_add_contact_func" << endl;
+                        }
+                        if(menu_add_group.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "menu_add_group" << endl;
+                        }
+                        if(menu_add_channel.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "menu_add_channel" << endl;
+                        }
+                        if(menu_read_all.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                            cout << "menu_read_all" << endl;
+                        }
+                    }
+
+                    if(menu_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                        cout << "menu_button" << endl;
+                        menu_flag++;
+                    }
+                    else
+                        menu_flag = 0;
+                }
 
         // input_rect is active
             if(write_flag) {   
@@ -347,12 +375,12 @@ int main() {
             window.draw(menu_read_all_sprite);
         }
 
-        if(chat_add_flag) {
+        if(add_chat_flag) {
             button_y = 120;
-            // menu_add_contact.setPosition(15, button_y);
-            // menu_add_group.setPosition(15, button_y + menu_button_h);
-            // menu_add_channel.setPosition(15, button_y + (menu_button_h * 2));
-            // menu_read_all.setPosition(15, button_y + (menu_button_h * 3));
+            menu_add_contact.setPosition(15, button_y);
+            menu_add_group.setPosition(15, button_y + menu_button_h);
+            menu_add_channel.setPosition(15, button_y + (menu_button_h * 2));
+            menu_read_all.setPosition(15, button_y + (menu_button_h * 3));
 
             add_contact_text.setPosition(60, button_y);
             add_group_text.setPosition(60, button_y + menu_button_h);
@@ -385,6 +413,10 @@ int main() {
 
         switch(state) {
             case CHAT_STATE:
+                settings_button.setTexture(settings_texture);
+                chats_button.setTexture(chats_active_texture);
+                contacts_button.setTexture(contacts_texture);
+
                 window.draw(input_rect);
                 window.draw(text);
 
@@ -393,50 +425,23 @@ int main() {
                     window.draw(thread_struct.recv_text[i]);
                 }
                 break;
+
             case SETTINGS_STATE:
+                settings_button.setTexture(settings_active_texture);
+                chats_button.setTexture(chats_texture);
+                contacts_button.setTexture(contacts_texture);
                 break;
+            
             case CONTACTS_STATE:
+                settings_button.setTexture(settings_texture);
+                chats_button.setTexture(chats_texture);
+                contacts_button.setTexture(contacts_active_texture);
                 break;
         }
         window.display();
     }
     return 0;
 }
-
-void settings_mode_func() {
-    cout << "settings_mode_func" << endl;
-    state = SETTINGS_STATE;
-    settings_button.setTexture(settings_active_texture);
-    chats_button.setTexture(chats_texture);
-    contacts_button.setTexture(contacts_texture);
-}
-
-void chat_mode_func() {
-    cout << "chat_mode_func" << endl;
-    state = CHAT_STATE;
-    settings_button.setTexture(settings_texture);
-    chats_button.setTexture(chats_active_texture);
-    contacts_button.setTexture(contacts_texture);
-}
-
-void contacts_mode_func() {
-    cout << "contacts_mode_func" << endl;
-    state = CONTACTS_STATE;
-    settings_button.setTexture(settings_texture);
-    chats_button.setTexture(chats_texture);
-    contacts_button.setTexture(contacts_active_texture);
-}
-
-void add_mode_func() {
-    cout << "add_mode_func" << endl;
-    chat_add_flag = 1;
-}
-
-void menu_mode_func() {
-    cout << "menu_mode_func" << endl;
-    menu_flag = 1;
-}
-
 
 void output_thread_func() {
     size_t received;
