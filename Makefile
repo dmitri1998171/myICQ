@@ -7,6 +7,8 @@ CC := g++
 CPPFLAGS := -I../include -L../lib
 LDFLAGS := -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
+all: $(BIN) $(SERVER)
+
 $(BIN):
 	cls && cd ./src && $(CC) $(SOURCE_MAIN) $(SOURCE_EXT) $(CPPFLAGS) $(LDFLAGS) -o ../bin/$(BIN).exe
 $(SERVER):

@@ -18,7 +18,9 @@
 #define WIDTH 1000
 #define HEIGHT 650
 
-#define PORT 53000
+#define PORT 2517
+#define logl(x) std::cout << x << std::endl
+#define log(x) std::cout << x
 
 using namespace std;
 using namespace sf;
@@ -44,8 +46,8 @@ void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, Rec
 
 void create_rect(RectangleShape *rect, Color color, float width, float height, float x, float y);
 void text_params_func(Font* font, Text *text, String message, Color color, float x, float y);
-void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char *str, int pos);
+void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape* output_text_rect, Text* recv_text, const char *str, int pos);
 void texture_loader(Texture* texture, string path);
 Sprite UI_shedule(Texture* texture, string path, float x, float y);
-
+void draw_circle_angle_rect(RectangleShape *rect, Color color, int width, int height, int x, int y);
 #endif

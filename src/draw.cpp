@@ -16,12 +16,12 @@ void text_params_func(Font* font, Text *text, String message, Color color, float
     text->setPosition(Vector2f(x, y));
 }
 
-void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape** output_text_rect, Text** recv_text, const char *str, int pos) {
+void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape* output_text_rect, Text* recv_text, const char *str, int pos) {
     int padding_x = 7, margin_x = 0, margin_y = 5; 
     float output_rect_x, output_rect_y, output_rect_w;
     RectangleShape* pre_output_rect = *output_rect;
-    RectangleShape* pre_output_text_rect = *output_text_rect;
-    Text* pre_recv_text = *recv_text;
+    // RectangleShape* pre_output_text_rect = *output_text_rect;
+    // Text* pre_recv_text = *recv_text;
 
     output_rect_y = pre_output_rect->getGlobalBounds().top;
     output_rect_w = (strlen(str) * font_size) * 0.5;
@@ -31,8 +31,8 @@ void draw_message_rect(Font** font, RectangleShape** output_rect, RectangleShape
     else 
         output_rect_x = pre_output_rect->getGlobalBounds().left + margin_x;
     
-    create_rect(&pre_output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w, font_size + margin_y, output_rect_x, output_rect_y + sep);
-    text_params_func(*font, &pre_recv_text[dialog_count], str, Color::White, output_rect_x + padding_x, output_rect_y + sep);
+    create_rect(&output_text_rect[dialog_count], Color(34, 52, 79), output_rect_w, font_size + margin_y, output_rect_x, output_rect_y + sep);
+    text_params_func(*font, &recv_text[dialog_count], str, Color::White, output_rect_x + padding_x, output_rect_y + sep);
     
     sep += 30;
     dialog_count++;
@@ -50,4 +50,14 @@ Sprite UI_shedule(Texture* texture, string path, float x, float y) {
     Sprite sprite(*texture);
     sprite.setPosition(x, y);
     return sprite;
+}
+
+void draw_circle_angle_rect(RectangleShape *rect, Color color, int width, int height, int x, int y) {
+    int radius = height / 2;
+
+    create_rect(rect, color, width, height, x, y);
+    
+    CircleShape left_circle(radius), right_circle(radius);
+    left_circle.setPosition(x, y + radius);
+    right_circle.setPosition(x + width, y + radius);
 }

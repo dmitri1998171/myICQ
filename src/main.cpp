@@ -3,6 +3,7 @@
 #define DEVICE "CLIENT"
 #define STR_SIZE 256
 Mutex mutex;
+bool isConnected = false;
 
 enum States {
     CHAT_STATE,
@@ -24,7 +25,7 @@ int sidebar_width;
 int sep, dialog_count;
 float font_size;
 
-void output_thread_func();
+void output_thread_func(TcpSocket *socket);
 
 int main() {
     int winX = 0, winY = 0;
@@ -53,7 +54,7 @@ int main() {
 
     create_rect(&background, output_color, WIDTH, HEIGHT, 0, 0);
     create_rect(&output_rect, output_color, (WIDTH - sidebar_width) - 20, output_rect_pos - 10, sidebar_width + 10, 10);
-    create_rect(&input_rect, sidebar_color, (WIDTH - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
+    draw_circle_angle_rect(&input_rect, sidebar_color, (WIDTH - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
     create_rect(&side_rect, sidebar_color, sidebar_width, HEIGHT, 0, 0);
 
 /* Fonts and texts */
@@ -157,14 +158,15 @@ int main() {
     thread_struct.output_rect = &output_rect;
     thread_struct.output_rect_pos = output_rect_pos;
     
-    Thread thread(&output_thread_func);
-    thread.launch();
     
 /* Dialog history */ 
     FILE* history;
     history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
     
-    while (window.isOpen()) {
+    Thread thread(&output_thread_func, &socket);
+    thread.launch();
+
+    while (true) {
         Event event;
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
@@ -311,7 +313,7 @@ int main() {
                                 // wrapText(message, 8, font, 14, false);
                         // }
 
-                        cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
+                        // cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
                         message.insert(message.getSize(), event.text.unicode);
                         text.setString(message);
                     }
@@ -325,12 +327,14 @@ int main() {
                         //     fprintf(history, "%s: %s\n", settings_struct.username, message.getData());
                         sendPacket << message;
 
-                        if (socket.send(sendPacket) != Socket::Done)
+                        if (socket.send(sendPacket) == Socket::Done) {
+                            draw_message_rect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, message.toAnsiString().c_str(), 1);
+                            sendPacket.clear();
+                            message.clear();
+                            text.setString(message);
+                        }
+                        else
                             die_With_Error(DEVICE, "Failed to send a message to server!");
-                        
-                        sendPacket.clear();
-                        message.clear();
-                        text.setString(message);
                     } 
                     if(event.key.code == Keyboard::BackSpace && message.getSize() > 0) {
                         message.erase(message.getSize() - 1);
@@ -443,28 +447,21 @@ int main() {
     return 0;
 }
 
-void output_thread_func() {
-    size_t received;
-    Text* pre_recv_text;
-    RectangleShape* pre_output_text_rect;
+void output_thread_func(TcpSocket *socket) {
 	Packet receivePacket;
-    String receive;
+    String received_string;
 
-    while (thread_struct.window->isOpen()) {
-        if (thread_struct.socket->receive(receivePacket) != Socket::Done) {
-            die_With_Error(DEVICE, "Failed to receive a message from the server!");
+    while (true) {
+        if (socket->receive(receivePacket) == Socket::Done) {
+            receivePacket >> received_string;
+            cout << "Received: \"" << received_string.toAnsiString() << "\" (" << received_string.getSize() << " bytes)" << endl;
+
+            mutex.lock();
+            draw_message_rect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, received_string.toAnsiString().c_str(), 0);
+            mutex.unlock();
         }
-
-		receivePacket >> receive;
-
-        cout << "Received: \"" << receive.toAnsiString() << "\" (" << receive.getSize() << " bytes)" << endl;
-
-        mutex.lock();
-        pre_output_text_rect = thread_struct.output_text_rect;
-        pre_recv_text = thread_struct.recv_text;
-        
-        draw_message_rect(&thread_struct.font, &thread_struct.output_rect, &pre_output_text_rect, &pre_recv_text, receive.toAnsiString().c_str(), 1);
-        mutex.unlock();
+        else 
+            die_With_Error(DEVICE, "Failed to receive a message from the server!");
 
         sleep(milliseconds(10));
     }

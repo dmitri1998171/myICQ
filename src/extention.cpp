@@ -39,10 +39,14 @@ void json_parser_create(struct Settings* settings_struct) {
 }
 
 void network_func(TcpSocket* socket) {
-    IpAddress server_ip = "127.0.0.1";
-    Socket::Status status = socket->connect(server_ip, PORT);
-    if (status != Socket::Done)
-        die_With_Error(DEVICE, "Failed to connect to server!");
+  IpAddress server_ip = "127.0.0.1";
+
+  if(socket->connect(server_ip, PORT) != sf::Socket::Done){
+    logl("Could not connect to the server\n");
+  }
+  else {
+    logl("Connected to the server\n");
+  }
 }
 
 int getCenter(Sprite img, Text text) {
@@ -56,7 +60,7 @@ int getCenter_y(RectangleShape img, Text text) {
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
     ifstream in("history.txt"); 
-    if (in.is_open()) {
+    if(in.is_open()) {
         string line;
         char *str;
         int pos = 0;    // Позиция сообщения на экране (справа или слева)
@@ -72,7 +76,7 @@ void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, Rec
                 pos = 0;
 
             str = strtok(NULL, ":");
-            draw_message_rect(&font, &output_rect, &output_text_rect, &recv_text, str, pos);
+            draw_message_rect(&font, &output_rect, output_text_rect, recv_text, str, pos);
         }
 
     }
