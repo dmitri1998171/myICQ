@@ -44,12 +44,10 @@ void texture_loader(Texture* texture, string path) {
     texture->setSmooth(true);
 }
 
-Sprite UI_shedule(Texture* texture, string path, float x, float y) {
+void sprite_loader(Sprite* sprite, Texture* texture, string path, float x, float y) {
     texture_loader(texture, path);
-
-    Sprite sprite(*texture);
-    sprite.setPosition(x, y);
-    return sprite;
+    sprite->setTexture(*texture);
+    sprite->setPosition(x, y);
 }
 
 void draw_circle_angle_rect(RectangleShape *rect, Color color, int width, int height, int x, int y) {
@@ -60,4 +58,15 @@ void draw_circle_angle_rect(RectangleShape *rect, Color color, int width, int he
     CircleShape left_circle(radius), right_circle(radius);
     left_circle.setPosition(x, y + radius);
     right_circle.setPosition(x + width, y + radius);
+}
+
+void add_Button_Func(Sprite* sprite, Texture* texture, Color color, Text* text, Font* font, string path, String str, int sprite_pos) {
+    sprite_loader(sprite, texture, path,  ((sidebar_width / 4) * sprite_pos) - (sprite->getGlobalBounds().width / 2), HEIGHT - 55 );
+    text_params_func(font, text, str, Color::White, getCenter(*sprite, *text), sprite->getGlobalBounds().top + sprite->getGlobalBounds().height);
+}
+
+void add_Menu_Button_Func(RectangleShape* rect, Texture* texture, Sprite* sprite, Color color, Text* text, Font* font, string path, String str, int text_pos) {
+    create_rect(rect, color, menu_w, menu_button_h, menu_x, menu_y + (menu_button_h * text_pos));
+    sprite_loader(sprite, texture, path, menu_x + 15, (rect->getPosition().y + 10));
+    text_params_func(font, text, str, Color::White, menu_button_h + 64, getCenter_y(*rect, *text) + (menu_button_h * text_pos));
 }

@@ -24,6 +24,8 @@ struct GraphicsThread {
 int sidebar_width;
 int sep, dialog_count;
 float font_size;
+int menu_x, menu_y, menu_w, menu_h;
+int menu_button_h;
 
 void output_thread_func(TcpSocket *socket);
 
@@ -46,6 +48,8 @@ int main() {
     sidebar_width = 400;
     font_size = settings_struct.font_size;
     strcat(title, settings_struct.username);
+    menu_x = 45, menu_y = 5, menu_w = 160, menu_h = 200;
+    menu_button_h = (menu_h / 4);
 
     RenderWindow window(VideoMode(WIDTH, HEIGHT), title);
 
@@ -73,7 +77,6 @@ int main() {
     search.setOutlineColor(line_color);
     text_params_func(&font, &search_text, "serach", line_color, 35, input_rect_pos + getCenter_y(search, search_text));
 
-
 // add sidebar buttons
     Texture settings_texture, chats_texture, contacts_texture,
     add_chat_texture, add_contact_texture, menu_texture;
@@ -84,68 +87,41 @@ int main() {
     Sprite settings_button, chats_button, contacts_button,
     add_button, menu_button;
 
+    Text settings_text, chats_text, contacts_text;
+
     texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
     texture_loader(&chats_texture, "./media/icons/chats.png");
     texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
     texture_loader(&contacts_active_texture, "./media/icons/active/contacts_active.png");
 
-    settings_button = UI_shedule(&settings_texture, "./media/icons/settings.png", ((sidebar_width / 4) * 3) - (settings_button.getGlobalBounds().width / 2), HEIGHT - 55);
-    chats_button = UI_shedule(&chats_active_texture, "./media/icons/active/chat_active.png", ((sidebar_width / 4) * 2) - (chats_button.getGlobalBounds().width / 2), HEIGHT - 55);
-    contacts_button = UI_shedule(&contacts_texture, "./media/icons/contacts.png", (sidebar_width / 4) - (contacts_button.getGlobalBounds().width / 2), HEIGHT - 55);
-    add_button = UI_shedule(&add_chat_texture, "./media/icons/add_chat.png", sidebar_width - 35, 5);
-    menu_button = UI_shedule(&menu_texture, "./media/icons/menu.png", 0, 5);
+    sprite_loader(&add_button, &add_chat_texture, "./media/icons/add_chat.png", sidebar_width - 35, 5);
+    sprite_loader(&menu_button, &menu_texture, "./media/icons/menu.png", 0, 5);
 
-    Text settings_text, chats_text, contacts_text;
-    text_params_func(&font, &settings_text, "settings", line_color, getCenter(settings_button, settings_text), settings_button.getGlobalBounds().top + settings_button.getGlobalBounds().height);
-    text_params_func(&font, &chats_text, "chats", line_color, getCenter(chats_button, chats_text) + 15, chats_button.getGlobalBounds().top + chats_button.getGlobalBounds().height);
-    text_params_func(&font, &contacts_text, "contacts", line_color, getCenter(contacts_button, contacts_text), contacts_button.getGlobalBounds().top + contacts_button.getGlobalBounds().height);
+    add_Button_Func(&contacts_button, &contacts_texture, line_color, &settings_text, &font, "./media/icons/contacts.png", "contacts", 1);
+    add_Button_Func(&chats_button, &chats_active_texture, line_color, &chats_text, &font, "./media/icons/active/chat_active.png", "chats", 2);
+    add_Button_Func(&settings_button, &settings_texture, line_color, &contacts_text, &font, "./media/icons/settings.png", "settings", 3);
 
 // menu button
-    RectangleShape menu, 
-    menu_add_contact, 
-    menu_add_group, 
-    menu_add_channel, 
-    menu_read_all, 
-    menu_line;
+    Sprite menu_add_contact_sprite, menu_add_group_sprite,
+    menu_add_channel_sprite, menu_read_all_sprite;
     
-    Texture menu_add_contact_texture,
-    menu_add_group_texture,
-    menu_add_channel_texture,
-    menu_read_all_texture;
-
-    Sprite menu_add_contact_sprite,
-    menu_add_group_sprite,
-    menu_add_channel_sprite,
-    menu_read_all_sprite;
+    RectangleShape menu, menu_add_contact, menu_add_group, 
+    menu_add_channel, menu_read_all, menu_line;
+    
+    Texture menu_add_contact_texture, menu_add_group_texture,
+    menu_add_channel_texture, menu_read_all_texture;
 
     Text add_contact_text, add_group_text, add_channel_text, read_all_text;
-
-    int menu_x = 45, menu_y = 5, menu_w = 160, menu_h = 200;
-    int menu_button_h = (menu_h / 4);
-
 
     create_rect(&menu, sidebar_color, menu_w, menu_h, menu_x, menu_y);
     create_rect(&menu_line, line_color, menu_w, 1, menu_x, menu_button_h * 3);
     menu.setOutlineThickness(0.5);
     menu.setOutlineColor(line_color);
 
-    create_rect(&menu_add_contact, sidebar_color, menu_w, menu_button_h, menu_x, menu_y);
-    create_rect(&menu_add_group, sidebar_color, menu_w, menu_button_h, menu_x, menu_y + menu_button_h);
-    create_rect(&menu_add_channel, sidebar_color, menu_w, menu_button_h, menu_x, menu_y + (menu_button_h * 2));
-    create_rect(&menu_read_all, sidebar_color, menu_w, menu_button_h, menu_x, menu_y + (menu_button_h * 3));
-
-
-    int button_y = menu_add_contact.getPosition().y;
-    menu_add_contact_sprite = UI_shedule(&menu_add_contact_texture, "./media/icons/menu/menu_add_contact.png", menu_x + 10, button_y + 10);
-    menu_add_group_sprite = UI_shedule(&menu_add_group_texture, "./media/icons/menu/menu_add_group.png", menu_x + 10, button_y + 10 + menu_button_h);
-    menu_add_channel_sprite = UI_shedule(&menu_add_channel_texture, "./media/icons/menu/menu_add_channel.png", menu_x + 10, button_y + 10 + (menu_button_h * 2));
-    menu_read_all_sprite = UI_shedule(&menu_read_all_texture, "./media/icons/menu/menu_read_all.png", menu_x + 10, button_y + 10 + (menu_button_h * 3));
-
-    int m_i_w = menu_add_contact_sprite.getGlobalBounds().width * 2;
-    text_params_func(&font, &add_contact_text, "Add contact", Color::White, menu_x + m_i_w, getCenter_y(menu_add_contact, add_contact_text));
-    text_params_func(&font, &add_group_text, "Add group", Color::White, menu_x + m_i_w, getCenter_y(menu_add_group, add_group_text) + menu_button_h);
-    text_params_func(&font, &add_channel_text, "Add channel", Color::White, menu_x + m_i_w, getCenter_y(menu_add_channel, add_channel_text) + (menu_button_h * 2));
-    text_params_func(&font, &read_all_text, "Read all", Color::White, menu_x + m_i_w, getCenter_y(menu_read_all, read_all_text) + (menu_button_h * 3));
+    add_Menu_Button_Func(&menu_add_contact, &add_contact_texture, &menu_add_contact_sprite, sidebar_color, &add_contact_text, &font, "./media/icons/menu/menu_add_contact.png", "Add contact", 0);
+    add_Menu_Button_Func(&menu_add_group, &menu_add_group_texture, &menu_add_group_sprite, sidebar_color, &add_group_text, &font, "./media/icons/menu/menu_add_group.png", "Add group", 1);
+    add_Menu_Button_Func(&menu_add_channel, &menu_add_channel_texture, &menu_add_channel_sprite, sidebar_color, &add_channel_text, &font, "./media/icons/menu/menu_add_channel.png", "Add channel", 2);
+    add_Menu_Button_Func(&menu_read_all, &menu_read_all_texture, &menu_read_all_sprite, sidebar_color, &read_all_text, &font, "./media/icons/menu/menu_read_all.png", "Read all", 3);
 
 /* Network */
     TcpSocket socket;
@@ -380,7 +356,7 @@ int main() {
         }
 
         if(add_chat_flag) {
-            button_y = 120;
+            int button_y = 120;
             menu_add_contact.setPosition(15, button_y);
             menu_add_group.setPosition(15, button_y + menu_button_h);
             menu_add_channel.setPosition(15, button_y + (menu_button_h * 2));
