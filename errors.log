@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 SERVER - Wed Jun 09 17:29:24 2021
  - ERROR: Failed to receive a message from the client!
 SERVER - Fri Jun 11 20:19:17 2021
@@ -642,3 +643,13 @@ SERVER - Fri Jun 18 16:42:14 2021
  - ERROR: Failed to receive a message from the client!
 SERVER - Fri Jun 18 16:43:54 2021
  - ERROR: Failed to receive a message from the client!
+=======
+SERVER - Wed May 05 21:33:02 2021
+ - ERROR: Failed to receive a message from the client!
+SERVER - Wed May 05 21:33:02 2021
+ - ERROR: Failed to send a message to client!
+SERVER - Wed May 05 21:33:34 2021
+ - ERROR: Failed to receive a message from the client!
+SERVER - Wed May 05 21:33:34 2021
+ - ERROR: Failed to send a message to client!
+>>>>>>> Stashed changes

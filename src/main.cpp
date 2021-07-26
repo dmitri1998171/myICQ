@@ -315,7 +315,7 @@ int main() {
                     if(event.key.code == Keyboard::BackSpace && message.getSize() > 0) {
                         message.erase(message.getSize() - 1);
                         text.setString(message);
-                    }       
+                    }
                 }
             }
         }  
