@@ -144,6 +144,9 @@ int main() {
     Thread thread(&output_thread_func, &socket);
     thread.launch();
 
+    int stringsCount = 0;    
+    int stringsLexemes = 0;
+
     while (true) {
         Event event;
         while (window.pollEvent(event)) {
@@ -283,17 +286,20 @@ int main() {
             if(write_flag) {   
                 if (event.type == Event::TextEntered) {
                     if (event.text.unicode >= 32 && event.text.unicode <= 126) {
-                        // if (text.getLocalBounds().width > 8) {
-                            // ++lineNumber; 
-                            // message.clear();
-                            // for (int i = 0; i < lineNumber; ++i)
-                                // message += "\n";
-                                // wrapText(message, 8, font, 14, false);
-                        // }
-
                         // cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
-                        message.insert(message.getSize(), event.text.unicode);
-                        text.setString(message);
+
+                        stringsLexemes = static_cast<int>(message.getSize() * (font_size / 2)) % static_cast<int>(input_rect.getGlobalBounds().width);
+
+                        if(stringsLexemes == 1 || stringsLexemes == 2 || stringsLexemes == 3) {
+                            text.setPosition(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top);
+                            message.insert(message.getSize(), "\n");
+                            stringsCount++;
+                        }
+
+                        if(stringsCount < 3) {
+                            message.insert(message.getSize(), event.text.unicode);
+                            text.setString(message);
+                        }
                     }
                 }
 
@@ -325,9 +331,9 @@ int main() {
         window.clear();
         window.draw(background);
         window.draw(output_rect);
-        
         window.draw(side_rect);
         window.draw(line);
+
         window.draw(settings_button);
         window.draw(chats_button);
         window.draw(contacts_button);
