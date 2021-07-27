@@ -1,4 +1,5 @@
 #include "header.hpp"
+#include "draw.hpp"
 
 #define DEVICE "CLIENT"
 #define STR_SIZE 256
@@ -43,6 +44,8 @@ int main() {
     Color output_color = Color(27, 28, 37);
     Color sidebar_color = Color(39, 40, 49);
     
+    IGUI gui;
+
     json_parser_create(&settings_struct);
     
     sidebar_width = 400;
@@ -56,26 +59,26 @@ int main() {
 /* Draw background */
     RectangleShape background, output_rect, input_rect, side_rect;
 
-    create_rect(&background, output_color, WIDTH, HEIGHT, 0, 0);
-    create_rect(&output_rect, output_color, (WIDTH - sidebar_width) - 20, output_rect_pos - 10, sidebar_width + 10, 10);
-    draw_circle_angle_rect(&input_rect, sidebar_color, (WIDTH - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
-    create_rect(&side_rect, sidebar_color, sidebar_width, HEIGHT, 0, 0);
+    gui.createRect(&background, output_color, WIDTH, HEIGHT, 0, 0);
+    gui.createRect(&output_rect, output_color, (WIDTH - sidebar_width) - 20, output_rect_pos - 10, sidebar_width + 10, 10);
+    gui.createCircleAngleRect(&input_rect, sidebar_color, (WIDTH - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
+    gui.createRect(&side_rect, sidebar_color, sidebar_width, HEIGHT, 0, 0);
 
 /* Fonts and texts */
     Text text;
     Font font;
     String message = "Enter a message...";
     font.loadFromFile("./media/fonts/CyrilicOld.TTF");
-    text_params_func(&font, &text, message, line_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + (input_rect.getGlobalBounds().height / 4));
+    gui.addText(&font, &text, message, line_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + (input_rect.getGlobalBounds().height / 4));
     
 /*UI*/ 
     RectangleShape line, search;
     Text search_text;
-    create_rect(&line, line_color, sidebar_width, 1, 0, HEIGHT - 65);
-    create_rect(&search, sidebar_color, sidebar_width - 30, input_rect_pos, 15, 50);
+    gui.createRect(&line, line_color, sidebar_width, 1, 0, HEIGHT - 65);
+    gui.createRect(&search, sidebar_color, sidebar_width - 30, input_rect_pos, 15, 50);
     search.setOutlineThickness(0.5);
     search.setOutlineColor(line_color);
-    text_params_func(&font, &search_text, "serach", line_color, 35, input_rect_pos + getCenter_y(search, search_text));
+    gui.addText(&font, &search_text, "serach", line_color, 35, input_rect_pos + gui.getCenter_y(search, search_text));
 
 // add sidebar buttons
     Texture settings_texture, chats_texture, contacts_texture,
@@ -89,17 +92,17 @@ int main() {
 
     Text settings_text, chats_text, contacts_text;
 
-    texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
-    texture_loader(&chats_texture, "./media/icons/chats.png");
-    texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
-    texture_loader(&contacts_active_texture, "./media/icons/active/contacts_active.png");
+    gui.texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
+    gui.texture_loader(&chats_texture, "./media/icons/chats.png");
+    gui.texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
+    gui.texture_loader(&contacts_active_texture, "./media/icons/active/contacts_active.png");
 
-    sprite_loader(&add_button, &add_chat_texture, "./media/icons/add_chat.png", sidebar_width - 35, 5);
-    sprite_loader(&menu_button, &menu_texture, "./media/icons/menu.png", 0, 5);
+    gui.sprite_loader(&add_button, &add_chat_texture, "./media/icons/add_chat.png", sidebar_width - 35, 5);
+    gui.sprite_loader(&menu_button, &menu_texture, "./media/icons/menu.png", 0, 5);
 
-    add_Button_Func(&contacts_button, &contacts_texture, line_color, &settings_text, &font, "./media/icons/contacts.png", "contacts", 1);
-    add_Button_Func(&chats_button, &chats_active_texture, line_color, &chats_text, &font, "./media/icons/active/chat_active.png", "chats", 2);
-    add_Button_Func(&settings_button, &settings_texture, line_color, &contacts_text, &font, "./media/icons/settings.png", "settings", 3);
+    gui.addButton(&contacts_button, &contacts_texture, line_color, &settings_text, &font, "./media/icons/contacts.png", "contacts", 1);
+    gui.addButton(&chats_button, &chats_active_texture, line_color, &chats_text, &font, "./media/icons/active/chat_active.png", "chats", 2);
+    gui.addButton(&settings_button, &settings_texture, line_color, &contacts_text, &font, "./media/icons/settings.png", "settings", 3);
 
 // menu button
     Sprite menu_add_contact_sprite, menu_add_group_sprite,
@@ -113,15 +116,15 @@ int main() {
 
     Text add_contact_text, add_group_text, add_channel_text, read_all_text;
 
-    create_rect(&menu, sidebar_color, menu_w, menu_h, menu_x, menu_y);
-    create_rect(&menu_line, line_color, menu_w, 1, menu_x, menu_button_h * 3);
+    gui.createRect(&menu, sidebar_color, menu_w, menu_h, menu_x, menu_y);
+    gui.createRect(&menu_line, line_color, menu_w, 1, menu_x, menu_button_h * 3);
     menu.setOutlineThickness(0.5);
     menu.setOutlineColor(line_color);
 
-    add_Menu_Button_Func(&menu_add_contact, &add_contact_texture, &menu_add_contact_sprite, sidebar_color, &add_contact_text, &font, "./media/icons/menu/menu_add_contact.png", "Add contact", 0);
-    add_Menu_Button_Func(&menu_add_group, &menu_add_group_texture, &menu_add_group_sprite, sidebar_color, &add_group_text, &font, "./media/icons/menu/menu_add_group.png", "Add group", 1);
-    add_Menu_Button_Func(&menu_add_channel, &menu_add_channel_texture, &menu_add_channel_sprite, sidebar_color, &add_channel_text, &font, "./media/icons/menu/menu_add_channel.png", "Add channel", 2);
-    add_Menu_Button_Func(&menu_read_all, &menu_read_all_texture, &menu_read_all_sprite, sidebar_color, &read_all_text, &font, "./media/icons/menu/menu_read_all.png", "Read all", 3);
+    gui.addMenuButton(&menu_add_contact, &add_contact_texture, &menu_add_contact_sprite, sidebar_color, &add_contact_text, &font, "./media/icons/menu/menu_add_contact.png", "Add contact", 0);
+    gui.addMenuButton(&menu_add_group, &menu_add_group_texture, &menu_add_group_sprite, sidebar_color, &add_group_text, &font, "./media/icons/menu/menu_add_group.png", "Add group", 1);
+    gui.addMenuButton(&menu_add_channel, &menu_add_channel_texture, &menu_add_channel_sprite, sidebar_color, &add_channel_text, &font, "./media/icons/menu/menu_add_channel.png", "Add channel", 2);
+    gui.addMenuButton(&menu_read_all, &menu_read_all_texture, &menu_read_all_sprite, sidebar_color, &read_all_text, &font, "./media/icons/menu/menu_read_all.png", "Read all", 3);
 
 /* Network */
     TcpSocket socket;
@@ -133,7 +136,6 @@ int main() {
     thread_struct.window = &window;
     thread_struct.output_rect = &output_rect;
     thread_struct.output_rect_pos = output_rect_pos;
-    
     
 /* Dialog history */ 
     FILE* history;
@@ -163,8 +165,8 @@ int main() {
                     sidebar_width = 0;
                     
                     side_rect.setSize(Vector2f(0, 0));
-                    create_rect(&output_rect, output_color, winX - 20, output_rect_pos - 10, 10, 10);
-                    create_rect(&input_rect, sidebar_color, winX - 20, input_rect_pos, 10, output_rect_pos + 10);
+                    (&output_rect, output_color, winX - 20, output_rect_pos - 10, 10, 10);
+                    gui.createRect(&input_rect, sidebar_color, winX - 20, input_rect_pos, 10, output_rect_pos + 10);
                     text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
                 }
@@ -174,10 +176,10 @@ int main() {
                     sidebar_width = 400;
                     output_rect_pos = winY - input_rect_pos;
 
-                    create_rect(&background, output_color, winX, winY, 0, 0);
-                    create_rect(&output_rect, output_color, winX - sidebar_width - 20, output_rect_pos - 10, sidebar_width + 10, 10);
-                    create_rect(&input_rect, sidebar_color, (winX - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
-                    create_rect(&side_rect, sidebar_color, sidebar_width, winY, 0, 0);
+                    gui.createRect(&background, output_color, winX, winY, 0, 0);
+                    gui.createRect(&output_rect, output_color, winX - sidebar_width - 20, output_rect_pos - 10, sidebar_width + 10, 10);
+                    gui.createRect(&input_rect, sidebar_color, (winX - sidebar_width) - 20, input_rect_pos, sidebar_width + 10, output_rect_pos + 10);
+                    gui.createRect(&side_rect, sidebar_color, sidebar_width, winY, 0, 0);
                     text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     thread_struct.output_rect = &output_rect;
                     history_dialog(&history, &font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
@@ -304,7 +306,7 @@ int main() {
                         sendPacket << message;
 
                         if (socket.send(sendPacket) == Socket::Done) {
-                            draw_message_rect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, message.toAnsiString().c_str(), 1);
+                            gui.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, message.toAnsiString().c_str(), 1);
                             sendPacket.clear();
                             message.clear();
                             text.setString(message);
@@ -426,6 +428,7 @@ int main() {
 void output_thread_func(TcpSocket *socket) {
 	Packet receivePacket;
     String received_string;
+    IGUI gui;
 
     while (true) {
         if (socket->receive(receivePacket) == Socket::Done) {
@@ -433,7 +436,7 @@ void output_thread_func(TcpSocket *socket) {
             cout << "Received: \"" << received_string.toAnsiString() << "\" (" << received_string.getSize() << " bytes)" << endl;
 
             mutex.lock();
-            draw_message_rect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, received_string.toAnsiString().c_str(), 0);
+            gui.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, received_string.toAnsiString().c_str(), 0);
             mutex.unlock();
         }
         else 
