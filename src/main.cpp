@@ -4,7 +4,6 @@
 #define DEVICE "CLIENT"
 #define STR_SIZE 256
 Mutex mutex;
-bool isConnected = false;
 
 enum States {
     CHAT_STATE,
@@ -28,7 +27,16 @@ float font_size;
 int menu_x, menu_y, menu_w, menu_h;
 int menu_button_h;
 
+Sprite settings_button, chats_button, contacts_button,
+add_button, menu_button;
+
 void output_thread_func(TcpSocket *socket);
+
+inline void setActiveButtonIcon(Texture *settings, Texture *chats, Texture *contacts) {
+    settings_button.setTexture(*settings);
+    chats_button.setTexture(*chats);
+    contacts_button.setTexture(*contacts);
+}
 
 int main() {
     int winX = 0, winY = 0;
@@ -86,9 +94,6 @@ int main() {
 
     Texture settings_active_texture, chats_active_texture, contacts_active_texture,
     add_chat_active_texture, add_contact_active_texture, menu_active_texture;
-
-    Sprite settings_button, chats_button, contacts_button,
-    add_button, menu_button;
 
     Text settings_text, chats_text, contacts_text;
 
@@ -201,7 +206,6 @@ int main() {
             if(event.type == Event::MouseButtonReleased) 
                 if(event.mouseButton.button == Mouse::Left) {
                     Vector2i mouse_pos = Mouse::getPosition(window);
-                    // printf("mouse_x: %i\tmouse_y: %i\n", mouse_pos.x, mouse_pos.y);
 
                     text.setFillColor(line_color);
                     if(message.getSize() == 0) {
@@ -225,14 +229,17 @@ int main() {
                     if(settings_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "SETTINGS_STATE" << endl;
                         state = SETTINGS_STATE;
+                        setActiveButtonIcon(&settings_active_texture, &chats_texture, &contacts_texture);
                     }
                     if(chats_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "CHAT_STATE" << endl;
                         state = CHAT_STATE;
+                        setActiveButtonIcon(&settings_texture, &chats_active_texture, &contacts_texture);
                     }
                     if(contacts_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "CONTACTS_STATE" << endl;
                         state = CONTACTS_STATE;
+                        setActiveButtonIcon(&settings_texture, &chats_texture, &contacts_active_texture);
                     }
 
                 // Add chat button
@@ -401,10 +408,6 @@ int main() {
 
         switch(state) {
             case CHAT_STATE:
-                settings_button.setTexture(settings_texture);
-                chats_button.setTexture(chats_active_texture);
-                contacts_button.setTexture(contacts_texture);
-
                 window.draw(input_rect);
                 window.draw(text);
 
@@ -415,15 +418,9 @@ int main() {
                 break;
 
             case SETTINGS_STATE:
-                settings_button.setTexture(settings_active_texture);
-                chats_button.setTexture(chats_texture);
-                contacts_button.setTexture(contacts_texture);
                 break;
             
             case CONTACTS_STATE:
-                settings_button.setTexture(settings_texture);
-                chats_button.setTexture(chats_texture);
-                contacts_button.setTexture(contacts_active_texture);
                 break;
         }
         window.display();
