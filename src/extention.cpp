@@ -1,5 +1,6 @@
 #include "header.hpp"
 #include "draw.hpp"
+#include "gui.hpp"
 
 #define DEVICE "CLIENT"
 
@@ -51,7 +52,7 @@ void network_func(TcpSocket* socket) {
 }
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
-    IGUI gui;
+    IDrawUI gui;
     
     ifstream in("history.txt"); 
     if(in.is_open()) {

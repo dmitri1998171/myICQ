@@ -1,7 +1,7 @@
 BIN := main
 SERVER := server
 SOURCE_MAIN := main.cpp 
-SOURCE_EXT := draw.cpp extention.cpp
+SOURCE_EXT := draw.cpp gui.cpp extention.cpp
 SOURCE_SERVER := server_tcp.cpp
 CC := g++
 CPPFLAGS := -I../include -L../lib

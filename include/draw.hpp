@@ -1,6 +1,9 @@
 #include "header.hpp"
 
-class IGUI {
+class IDrawUI {
+    // private:
+        
+
     public:
         void createRect(RectangleShape *rect, Color color, float width, float height, float x, float y);
         void addText(Font* font, Text *text, String message, Color color, float x, float y);
@@ -10,6 +13,6 @@ class IGUI {
         void createCircleAngleRect(RectangleShape *rect, Color color, int width, int height, int x, int y);
         void addButton(Sprite* sprite, Texture* texture, Color color, Text* text, Font* font, string path, String str, int sprite_pos);
         void addMenuButton(RectangleShape* rect, Texture* texture, Sprite* sprite, Color color, Text* text, Font* font, string path, String str, int text_pos);
-        int getCenter(Sprite img, Text text);
+        int getCenter_x(Sprite img, Text text);
         int getCenter_y(RectangleShape img, Text text);
 };
