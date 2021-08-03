@@ -62,6 +62,8 @@ class Registry {
         int min_x = 470, min_y = 600, sub_min_x = 830;
         float output_rect_pos = HEIGHT * 0.9;
         float input_rect_pos = HEIGHT - output_rect_pos  - 20;
+        string date;
+        string time;
         Color line_color = Color(128, 128, 128);
         Color output_color = Color(27, 28, 37);
         Color sidebar_color = Color(39, 40, 49);

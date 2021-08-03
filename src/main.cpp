@@ -26,8 +26,45 @@ int menu_button_h;
 
 void output_thread_func(TcpSocket *socket);
 
+string getTime(time_t t) {
+    string time = ctime(&t);
+    string lexeme = " ";
+
+    time.erase(0, time.find(lexeme) + lexeme.length());
+    time.erase(0, time.find(lexeme) + lexeme.length());
+    time.erase(0, time.find(lexeme) + lexeme.length());
+    string token = time.substr(0, time.find(lexeme));
+
+    return token;
+}
+
+void splitString(string str, string tokens[]) {
+    int i = 0, pos = 0;
+    string lexeme = " ";
+    string token;
+    
+    while ((pos = str.find(lexeme)) != string::npos) {
+        token = str.substr(0, pos);
+        tokens[i] = token;
+        str.erase(0, pos + lexeme.length());
+        i++;
+    }
+    tokens[i] = str;
+}
+
+string getDate(time_t t, string lexeme) {
+    string time = ctime(&t);
+    string token = time.substr(0, time.find(lexeme));
+    string year = time.erase(time.size() - 4, time.find(lexeme) + lexeme.length());
+
+    return token.append(year);
+}
+
 int main() {
+    time_t t=time(NULL);
     char title[100] = {"myICQ    Name: "};
+    string systemTime = ctime(&t);
+    string date_time[6];
     struct Settings settings_struct;
     Packet sendPacket;
     
@@ -124,6 +161,8 @@ int main() {
     int stringsCount = 0;    
     int stringsLexemes = 0;
 
+    
+    
     while (true) {
         Event event;
         while (window.pollEvent(event)) {
@@ -181,15 +220,16 @@ int main() {
 
                     reg.text.setFillColor(reg.line_color);
                     if(reg.message.getSize() == 0) {
-                        reg.message = "Enter a reg.message...";
+                        reg.message = "Enter a message...";
                         reg.text.setString(reg.message);
                     }
                     
                 // input_rect
                     if(reg.state == CHAT_STATE && input_rect.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        if(reg.message == "Enter a reg.message...") {
+                        if(reg.message == "Enter a message...") {
                             reg.message.clear();
-                            reg.text.setString(reg.message);
+                            // reg.text.setString(reg.message);
+                            reg.text.setString("");
                         }
                         reg.write_flag = 1;
                         reg.text.setFillColor(Color::White);
@@ -290,20 +330,32 @@ int main() {
 
                 if (event.type == Event::KeyPressed) {
                     if (event.key.code == Keyboard::Enter) {
-                        cout << "reg.message: " << reg.message.toAnsiString() << endl;
-                        reg.message.insert(reg.message.getSize(), " ");
-                        // if(history != NULL)
-                        //     fprintf(history, "%s: %s\n", settings_struct.username, reg.message.getData());
-                        sendPacket << reg.message;
+                        if(reg.message.getSize() > 0) {
+                            cout << "message: " << reg.message.toAnsiString() << endl;
+                            reg.message.insert(reg.message.getSize(), " ");
+                            // if(history != NULL)
+                            //     fprintf(history, "%s: %s\n", settings_struct.username, reg.message.getData());
+                            sendPacket << reg.message;
 
-                        if (socket.send(sendPacket) == Socket::Done) {
-                            drawUI.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, reg.message.toAnsiString().c_str(), 1);
-                            sendPacket.clear();
-                            reg.message.clear();
-                            reg.text.setString(reg.message);
+                            if (socket.send(sendPacket) == Socket::Done) {
+                                splitString(systemTime, date_time);
+                                reg.time = date_time[3];
+
+                                for(int i = 0; i < 6; i++) 
+                                    if(i != 3) 
+                                        reg.date.append(date_time[i] + " ");
+
+                                logl(reg.date);
+
+                                reg.message.insert(reg.message.getSize(), reg.time);
+                                drawUI.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, reg.message.toAnsiString().c_str(), 1);
+                                sendPacket.clear();
+                                reg.message.clear();
+                                reg.text.setString(reg.message);
+                            }
+                            else
+                                die_With_Error(DEVICE, "Failed to send a message to server!");
                         }
-                        else
-                            die_With_Error(DEVICE, "Failed to send a reg.message to server!");
                     } 
                     if(event.key.code == Keyboard::BackSpace && reg.message.getSize() > 0) {
                         reg.message.erase(reg.message.getSize() - 1);
