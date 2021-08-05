@@ -41,17 +41,13 @@ enum States {
     CONTACTS_STATE
 };
 
-extern int sep, dialog_count;
-extern int sidebar_width;
+extern int sep;
+extern int dialog_count;
 extern float font_size;
-extern int menu_x, menu_y, menu_w, menu_h;
-extern int menu_button_h;
 
 void die_With_Error(const char *device, const char *error_message);
 void json_parser_create(struct Settings* settings_struct);
 void network_func(TcpSocket* socket);
-int getCenter(Sprite img, Text text);
-int getCenter_y(RectangleShape img, Text text);
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct);
 
 class Registry {
@@ -76,6 +72,12 @@ class Registry {
         Sprite settings_button, chats_button, contacts_button,
         add_button, menu_button;
         
+        Texture settings_texture, chats_texture, contacts_texture,
+        add_chat_texture, add_contact_texture, menu_texture;
+
+        Texture settings_active_texture, chats_active_texture, contacts_active_texture,
+        add_chat_active_texture, add_contact_active_texture, menu_active_texture;
+
         Registry() {
             buttons["settings"] = settings_button;
             buttons["chats"] = chats_button;

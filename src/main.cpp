@@ -1,12 +1,8 @@
-#include "header.hpp"
-#include "draw.hpp"
 #include "gui.hpp"
 
 #define DEVICE "CLIENT"
 #define STR_SIZE 256
 Mutex mutex;
-
-
 
 struct GraphicsThread {
     Font* font;
@@ -18,56 +14,23 @@ struct GraphicsThread {
     float output_rect_pos;
 }thread_struct;
 
-int sidebar_width;
-int sep, dialog_count;
+void output_thread_func(TcpSocket*);
+void splitString(string, string []);
+
+Assets* Assets::instance = 0;
+int sep;
+int dialog_count;
 float font_size;
-int menu_x, menu_y, menu_w, menu_h;
-int menu_button_h;
-
-void output_thread_func(TcpSocket *socket);
-
-string getTime(time_t t) {
-    string time = ctime(&t);
-    string lexeme = " ";
-
-    time.erase(0, time.find(lexeme) + lexeme.length());
-    time.erase(0, time.find(lexeme) + lexeme.length());
-    time.erase(0, time.find(lexeme) + lexeme.length());
-    string token = time.substr(0, time.find(lexeme));
-
-    return token;
-}
-
-void splitString(string str, string tokens[]) {
-    int i = 0, pos = 0;
-    string lexeme = " ";
-    string token;
-    
-    while ((pos = str.find(lexeme)) != string::npos) {
-        token = str.substr(0, pos);
-        tokens[i] = token;
-        str.erase(0, pos + lexeme.length());
-        i++;
-    }
-    tokens[i] = str;
-}
-
-string getDate(time_t t, string lexeme) {
-    string time = ctime(&t);
-    string token = time.substr(0, time.find(lexeme));
-    string year = time.erase(time.size() - 4, time.find(lexeme) + lexeme.length());
-
-    return token.append(year);
-}
 
 int main() {
+    int stringsCount = 0, stringsLexemes = 0;
     time_t t=time(NULL);
-    char title[100] = {"myICQ    Name: "};
     string systemTime = ctime(&t);
     string date_time[6];
     struct Settings settings_struct;
     Packet sendPacket;
     
+    Assets* assets = Assets::getInstance();
     Registry reg;
     IDrawUI drawUI;
     IGUI ui;
@@ -75,14 +38,9 @@ int main() {
     RectangleShape background, output_rect, input_rect, side_rect;
 
     json_parser_create(&settings_struct);
-    
-    sidebar_width = 400;
     font_size = settings_struct.font_size;
-    strcat(title, settings_struct.username);
-    menu_x = 45, menu_y = 5, menu_w = 160, menu_h = 200;
-    menu_button_h = (menu_h / 4);
-
-    RenderWindow window(VideoMode(WIDTH, HEIGHT), title);
+    
+    RenderWindow window(VideoMode(WIDTH, HEIGHT), "myICQ");
 
 /* Draw background */
     ui.drawBackground(&background, &output_rect, &input_rect, &side_rect);
@@ -98,25 +56,25 @@ int main() {
     ui.drawUI(&line, &search);
 
 // add sidebar buttons
-    Texture settings_texture, chats_texture, contacts_texture,
-    add_chat_texture, add_contact_texture, menu_texture;
+    // Texture settings_texture, chats_texture, contacts_texture,
+    // add_chat_texture, add_contact_texture, menu_texture;
 
-    Texture settings_active_texture, chats_active_texture, contacts_active_texture,
-    add_chat_active_texture, add_contact_active_texture, menu_active_texture;
+    // Texture settings_active_texture, chats_active_texture, contacts_active_texture,
+    // add_chat_active_texture, add_contact_active_texture, menu_active_texture;
 
     Text settings_text, chats_text, contacts_text;
 
-    drawUI.texture_loader(&add_contact_texture, "./media/icons/add_contact.png");
-    drawUI.texture_loader(&chats_texture, "./media/icons/chats.png");
-    drawUI.texture_loader(&settings_active_texture, "./media/icons/active/settings_active.png");
-    drawUI.texture_loader(&contacts_active_texture, "./media/icons/active/contacts_active.png");
+    assets->texture_loader(&reg.add_contact_texture, "./media/icons/add_contact.png");
+    assets->texture_loader(&reg.chats_texture, "./media/icons/chats.png");
+    assets->texture_loader(&reg.settings_active_texture, "./media/icons/active/settings_active.png");
+    assets->texture_loader(&reg.contacts_active_texture, "./media/icons/active/contacts_active.png");
+    
+    assets->sprite_loader(&reg.buttons["add"], &reg.add_chat_texture, "./media/icons/add_chat.png", drawUI.sidebar_width - 35, 5);
+    assets->sprite_loader(&reg.buttons["menu"], &reg.menu_texture, "./media/icons/menu.png", 0, 5);
 
-    drawUI.sprite_loader(&reg.buttons["add"], &add_chat_texture, "./media/icons/add_chat.png", sidebar_width - 35, 5);
-    drawUI.sprite_loader(&reg.buttons["menu"], &menu_texture, "./media/icons/menu.png", 0, 5);
-
-    drawUI.addButton(&reg.buttons["contacts"], &contacts_texture, reg.line_color, &settings_text, &reg.font, "./media/icons/contacts.png", "contacts", 1);
-    drawUI.addButton(&reg.buttons["chats"], &chats_active_texture, reg.line_color, &chats_text, &reg.font, "./media/icons/active/chat_active.png", "chats", 2);
-    drawUI.addButton(&reg.buttons["settings"], &settings_texture, reg.line_color, &contacts_text, &reg.font, "./media/icons/settings.png", "settings", 3);
+    drawUI.addButton(&reg.buttons["contacts"], &reg.contacts_texture, reg.line_color, &settings_text, &reg.font, "./media/icons/contacts.png", "contacts", 1);
+    drawUI.addButton(&reg.buttons["chats"], &reg.chats_active_texture, reg.line_color, &chats_text, &reg.font, "./media/icons/active/chat_active.png", "chats", 2);
+    drawUI.addButton(&reg.buttons["settings"], &reg.settings_texture, reg.line_color, &contacts_text, &reg.font, "./media/icons/settings.png", "settings", 3);
 
 // menu button
     Sprite menu_add_contact_sprite, menu_add_group_sprite,
@@ -130,12 +88,12 @@ int main() {
 
     Text add_contact_text, add_group_text, add_channel_text, read_all_text;
 
-    drawUI.createRect(&menu, reg.sidebar_color, menu_w, menu_h, menu_x, menu_y);
-    drawUI.createRect(&menu_line, reg.line_color, menu_w, 1, menu_x, menu_button_h * 3);
+    drawUI.createRect(&menu, reg.sidebar_color, drawUI.menu_w, drawUI.menu_h, drawUI.menu_x, drawUI.menu_y);
+    drawUI.createRect(&menu_line, reg.line_color, drawUI.menu_w, 1, drawUI.menu_x, drawUI.menu_button_h * 3);
     menu.setOutlineThickness(0.5);
     menu.setOutlineColor(reg.line_color);
 
-    drawUI.addMenuButton(&menu_add_contact, &add_contact_texture, &menu_add_contact_sprite, reg.sidebar_color, &add_contact_text, &reg.font, "./media/icons/menu/menu_add_contact.png", "Add contact", 0);
+    drawUI.addMenuButton(&menu_add_contact, &reg.add_contact_texture, &menu_add_contact_sprite, reg.sidebar_color, &add_contact_text, &reg.font, "./media/icons/menu/menu_add_contact.png", "Add contact", 0);
     drawUI.addMenuButton(&menu_add_group, &menu_add_group_texture, &menu_add_group_sprite, reg.sidebar_color, &add_group_text, &reg.font, "./media/icons/menu/menu_add_group.png", "Add group", 1);
     drawUI.addMenuButton(&menu_add_channel, &menu_add_channel_texture, &menu_add_channel_sprite, reg.sidebar_color, &add_channel_text, &reg.font, "./media/icons/menu/menu_add_channel.png", "Add channel", 2);
     drawUI.addMenuButton(&menu_read_all, &menu_read_all_texture, &menu_read_all_sprite, reg.sidebar_color, &read_all_text, &reg.font, "./media/icons/menu/menu_read_all.png", "Read all", 3);
@@ -157,11 +115,6 @@ int main() {
     
     Thread thread(&output_thread_func, &socket);
     thread.launch();
-
-    int stringsCount = 0;    
-    int stringsLexemes = 0;
-
-    
     
     while (true) {
         Event event;
@@ -181,7 +134,7 @@ int main() {
         // 2
                 if(reg.min_x < reg.winX < reg.sub_min_x) {
                     reg.output_rect_pos = HEIGHT * 0.8;
-                    sidebar_width = 0;
+                    drawUI.sidebar_width = 0;
                     
                     side_rect.setSize(Vector2f(0, 0));
                     (&output_rect, reg.output_color, reg.winX - 20, reg.output_rect_pos - 10, 10, 10);
@@ -192,13 +145,13 @@ int main() {
 
         // 1
                 if(reg.winX > reg.sub_min_x) {
-                    sidebar_width = 400;
+                    drawUI.sidebar_width = 400;
                     reg.output_rect_pos = reg.winY - reg.input_rect_pos;
 
                     drawUI.createRect(&background, reg.output_color, reg.winX, reg.winY, 0, 0);
-                    drawUI.createRect(&output_rect, reg.output_color, reg.winX - sidebar_width - 20, reg.output_rect_pos - 10, sidebar_width + 10, 10);
-                    drawUI.createRect(&input_rect, reg.sidebar_color, (reg.winX - sidebar_width) - 20, reg.input_rect_pos, sidebar_width + 10, reg.output_rect_pos + 10);
-                    drawUI.createRect(&side_rect, reg.sidebar_color, sidebar_width, reg.winY, 0, 0);
+                    drawUI.createRect(&output_rect, reg.output_color, reg.winX - drawUI.sidebar_width - 20, reg.output_rect_pos - 10, drawUI.sidebar_width + 10, 10);
+                    drawUI.createRect(&input_rect, reg.sidebar_color, (reg.winX - drawUI.sidebar_width) - 20, reg.input_rect_pos, drawUI.sidebar_width + 10, reg.output_rect_pos + 10);
+                    drawUI.createRect(&side_rect, reg.sidebar_color, drawUI.sidebar_width, reg.winY, 0, 0);
                     reg.text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     thread_struct.output_rect = &output_rect;
                     history_dialog(&history, &reg.font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
@@ -241,23 +194,23 @@ int main() {
                     if(reg.buttons["settings"].getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "SETTINGS_STATE" << endl;
                         reg.state = SETTINGS_STATE;
-                        reg.buttons["settings"].setTexture(settings_active_texture);
-                        reg.buttons["chats"].setTexture(chats_texture);
-                        reg.buttons["contacts"].setTexture(contacts_texture);
+                        reg.buttons["settings"].setTexture(reg.settings_active_texture);
+                        reg.buttons["chats"].setTexture(reg.chats_texture);
+                        reg.buttons["contacts"].setTexture(reg.contacts_texture);
                     }
                     if(reg.buttons["chats"].getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "CHAT_STATE" << endl;
                         reg.state = CHAT_STATE;
-                        reg.buttons["settings"].setTexture(settings_texture);
-                        reg.buttons["chats"].setTexture(chats_active_texture);
-                        reg.buttons["contacts"].setTexture(contacts_texture);
+                        reg.buttons["settings"].setTexture(reg.settings_texture);
+                        reg.buttons["chats"].setTexture(reg.chats_active_texture);
+                        reg.buttons["contacts"].setTexture(reg.contacts_texture);
                     }
                     if(reg.buttons["contacts"].getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
                         cout << "CONTACTS_STATE" << endl;
                         reg.state = CONTACTS_STATE;
-                        reg.buttons["settings"].setTexture(settings_texture);
-                        reg.buttons["chats"].setTexture(chats_texture);
-                        reg.buttons["contacts"].setTexture(contacts_active_texture);
+                        reg.buttons["settings"].setTexture(reg.settings_texture);
+                        reg.buttons["chats"].setTexture(reg.chats_texture);
+                        reg.buttons["contacts"].setTexture(reg.contacts_active_texture);
                     }
 
                 // Add chat button
@@ -313,7 +266,7 @@ int main() {
                     if (event.text.unicode >= 32 && event.text.unicode <= 126) {
                         // cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
 
-                        stringsLexemes = static_cast<int>(reg.message.getSize() * (font_size / 2)) % static_cast<int>(input_rect.getGlobalBounds().width);
+                        stringsLexemes = static_cast<int>(reg.message.getSize() * reg.text.getCharacterSize() / 2) % static_cast<int>(input_rect.getGlobalBounds().width);
 
                         if(stringsLexemes == 1 || stringsLexemes == 2 || stringsLexemes == 3) {
                             reg.text.setPosition(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top);
@@ -408,19 +361,19 @@ int main() {
         if(reg.add_chat_flag) {
             int button_y = 120;
             menu_add_contact.setPosition(15, button_y);
-            menu_add_group.setPosition(15, button_y + menu_button_h);
-            menu_add_channel.setPosition(15, button_y + (menu_button_h * 2));
-            menu_read_all.setPosition(15, button_y + (menu_button_h * 3));
+            menu_add_group.setPosition(15, button_y + drawUI.menu_button_h);
+            menu_add_channel.setPosition(15, button_y + (drawUI.menu_button_h * 2));
+            menu_read_all.setPosition(15, button_y + (drawUI.menu_button_h * 3));
 
             add_contact_text.setPosition(60, button_y);
-            add_group_text.setPosition(60, button_y + menu_button_h);
-            add_channel_text.setPosition(60, button_y + (menu_button_h * 2));
-            read_all_text.setPosition(60, button_y+ (menu_button_h * 3));
+            add_group_text.setPosition(60, button_y + drawUI.menu_button_h);
+            add_channel_text.setPosition(60, button_y + (drawUI.menu_button_h * 2));
+            read_all_text.setPosition(60, button_y+ (drawUI.menu_button_h * 3));
 
             menu_add_contact_sprite.setPosition(15, button_y);
-            menu_add_group_sprite.setPosition(15, button_y + menu_button_h);
-            menu_add_channel_sprite.setPosition(15, button_y + (menu_button_h * 2));
-            menu_read_all_sprite.setPosition(15, button_y+ (menu_button_h * 3));
+            menu_add_group_sprite.setPosition(15, button_y + drawUI.menu_button_h);
+            menu_add_channel_sprite.setPosition(15, button_y + (drawUI.menu_button_h * 2));
+            menu_read_all_sprite.setPosition(15, button_y+ (drawUI.menu_button_h * 3));
 
             window.draw(search);
             window.draw(reg.search_text);

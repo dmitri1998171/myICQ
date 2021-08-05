@@ -1,5 +1,3 @@
-#include "header.hpp"
-#include "draw.hpp"
 #include "gui.hpp"
 
 #define DEVICE "CLIENT"
@@ -53,7 +51,8 @@ void network_func(TcpSocket* socket) {
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
     IDrawUI gui;
-    
+    Registry reg;
+
     ifstream in("history.txt"); 
     if(in.is_open()) {
         string line;
@@ -79,32 +78,16 @@ void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, Rec
     in.close();
 }
 
-String wrapText(String string, unsigned width, const Font &font, unsigned charicterSize, bool bold) {
-  unsigned currentOffset = 0;
-  bool firstWord = true;
-  std::size_t wordBegining = 0;
-
-  for (std::size_t pos(0); pos < string.getSize(); ++pos) {
-    auto currentChar = string[pos];
-    if (currentChar == '\n'){
-      currentOffset = 0;
-      firstWord = true;
-      continue;
-    } else if (currentChar == ' ') {
-      wordBegining = pos;
-      firstWord = false;
+void splitString(string str, string tokens[]) {
+    int i = 0, pos = 0;
+    string lexeme = " ";
+    string token;
+    
+    while ((pos = str.find(lexeme)) != string::npos) {
+        token = str.substr(0, pos);
+        tokens[i] = token;
+        str.erase(0, pos + lexeme.length());
+        i++;
     }
-
-    auto glyph = font.getGlyph(currentChar, charicterSize, bold);
-    currentOffset += glyph.advance;
-
-    if (!firstWord && currentOffset > width) {
-      pos = wordBegining;
-      string[pos] = '\n';
-      firstWord = true;
-      currentOffset = 0;
-    }
-  }
-
-  return string;
+    tokens[i] = str;
 }
