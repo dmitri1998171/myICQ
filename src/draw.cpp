@@ -51,7 +51,7 @@ void IDrawUI::addButton(Sprite* sprite, Texture* texture, Color color, Text* tex
     addText(font, text, str, Color::White, getCenter_x(*sprite, *text), sprite->getGlobalBounds().top + sprite->getGlobalBounds().height);
 }
 
-void IDrawUI::addMenuButton(RectangleShape* rect, Texture* texture, Sprite* sprite, Color color, Text* text, Font* font, string path, String str, int text_pos) {
+void IDrawUI::addMenuButton(RectangleShape *rect, Texture* texture, Sprite* sprite, Color color, Text* text, Font* font, string path, String str, int text_pos) {
     createRect(rect, color, menu_w, menu_button_h, menu_x, menu_y + (menu_button_h * text_pos));
     assets->sprite_loader(sprite, texture, path, menu_x + 15, (rect->getPosition().y + 10));
     addText(font, text, str, Color::White, menu_button_h + 64, getCenter_y(*rect, *text) + (menu_button_h * text_pos));

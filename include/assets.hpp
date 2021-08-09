@@ -4,11 +4,10 @@
 
 class Assets {
     private:
-
+        static Assets* instance;
         Assets() {}
 
     public:
-        static Assets* instance;
         static Assets* getInstance() {
             if (instance == 0)
                 instance = new Assets();
