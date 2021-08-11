@@ -1,20 +1,20 @@
 #include "gui.hpp"
 
-void IGUI::addBackground(RectangleShape* background, RectangleShape* output_rect, RectangleShape* input_rect, RectangleShape* side_rect) {
+void IGUI::addBackground(RectangleShape* background, RectangleShape* output_rect, RectangleShape* input_rect, RectangleShape* side_rect, RectangleShape* line, RectangleShape* search) {
     createRect(background, reg.output_color, WIDTH, HEIGHT, 0, 0);
     createRect(output_rect, reg.output_color, (WIDTH - sidebar_width) - 20, reg.output_rect_pos - 10, sidebar_width + 10, 10);
     createCircleAngleRect(input_rect, reg.sidebar_color, (WIDTH - sidebar_width) - 20, reg.input_rect_pos, sidebar_width + 10, reg.output_rect_pos + 10);
     createRect(side_rect, reg.sidebar_color, sidebar_width, HEIGHT, 0, 0);
-}
-
-void IGUI::addUI(RectangleShape* line, RectangleShape* search, RectangleShape* input_rect) {
+    
     createRect(line, reg.line_color, sidebar_width, 1, 0, HEIGHT - 65);
     createRect(search, reg.sidebar_color, sidebar_width - 30, reg.input_rect_pos, 15, 50);
     search->setOutlineThickness(0.5);
     search->setOutlineColor(reg.line_color);
-    addText(&reg.font, &reg.search_text, "search", reg.line_color, 35, reg.input_rect_pos + getCenter_y(*search, reg.search_text));
-    addText(&reg.font, &reg.text, reg.message, reg.line_color, input_rect->getGlobalBounds().left + 10, input_rect->getGlobalBounds().top + (input_rect->getGlobalBounds().height / 4));
 }
+
+void IGUI::addUI(RectangleShape* line, RectangleShape* search, RectangleShape* input_rect) {
+    
+    }
 
 void IGUI::addMenu(Text* add_contact_text, Text* add_group_text, Text* add_channel_text, Text* read_all_text) {
     createRect(&menu, reg.sidebar_color, menu_w, menu_h, menu_x, menu_y);
@@ -38,6 +38,47 @@ void IGUI::changeMenuPosition(int button_y, Text* add_contact_text, Text* add_gr
     menu_add_group_sprite.setPosition(15, button_y + menu_button_h);
     menu_add_channel_sprite.setPosition(15, button_y + (menu_button_h * 2));
     menu_read_all_sprite.setPosition(15, button_y+ (menu_button_h * 3));
+}
+
+void IGUI::changeTexture(Texture* settings, Texture* chats, Texture* contacts) {
+    settings_button.setTexture(*settings);
+    chats_button.setTexture(*chats);
+    contacts_button.setTexture(*contacts);
+}
+
+int IGUI::checkToClickSprite(RenderWindow* window, Sprite* button) {
+    Vector2i mouse_pos = Mouse::getPosition(*window);
+    // IntRect rect = button->getTextureRect();
+
+    if(button->getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) 
+    // if(rect.contains(mouse_pos)) 
+        return 1;
+    else 
+        return 0;
+}
+
+int IGUI::checkToClickRect(RenderWindow* window, RectangleShape* rect) {
+    Vector2i mouse_pos = Mouse::getPosition(*window);
+
+    if(rect->getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) 
+        return 1;
+    else 
+        return 0;
+}
+
+void IGUI::checkToClickMenuButtons(RenderWindow* window) {
+    if(checkToClickRect(window, &menu_add_contact)) {
+        logl("add contact");
+    }
+    if(checkToClickRect(window, &menu_add_group)) {
+        logl("add group");
+    }
+    if(checkToClickRect(window, &menu_add_channel)) {
+        logl("add channel");
+    }
+    if(checkToClickRect(window, &menu_read_all)) {
+        logl("read all");
+    }
 }
 
 void IGUI::drawBackground(RenderWindow* window, RectangleShape* background, RectangleShape* output_rect, RectangleShape* input_rect, RectangleShape* side_rect, RectangleShape* line) {

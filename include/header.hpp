@@ -67,9 +67,6 @@ class Registry {
         String message = "Enter a message...";
         Font font;
 
-            /* Texts */ 
-        Text text, search_text;
-
             /* Textures */ 
         Texture settings_texture, chats_texture, contacts_texture,
         add_chat_texture, add_contact_texture, menu_texture;

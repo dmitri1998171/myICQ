@@ -55,11 +55,12 @@ int main() {
     /*UI*/ 
 
 // Background 
-    RectangleShape background, output_rect, input_rect, side_rect;
-    ui.addBackground(&background, &output_rect, &input_rect, &side_rect);
+    RectangleShape background, output_rect, input_rect, side_rect, line, search;
+    ui.addBackground(&background, &output_rect, &input_rect, &side_rect, &line, &search);
 
-    RectangleShape line, search;
-    ui.addUI(&line, &search, &input_rect);
+    Text text, search_text;
+    drawUI.addText(&reg.font, &search_text, "search", reg.line_color, 35, reg.input_rect_pos + drawUI.getCenter_y(search, search_text));
+    drawUI.addText(&reg.font, &text, reg.message, reg.line_color, input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + (input_rect.getGlobalBounds().height / 4));
 
 // Buttons
     Text settings_text, chats_text, contacts_text;
@@ -120,7 +121,7 @@ int main() {
                     side_rect.setSize(Vector2f(0, 0));
                     (&output_rect, reg.output_color, reg.winX - 20, reg.output_rect_pos - 10, 10, 10);
                     drawUI.createRect(&input_rect, reg.sidebar_color, reg.winX - 20, reg.input_rect_pos, 10, reg.output_rect_pos + 10);
-                    reg.text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
+                    text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     history_dialog(&history, &reg.font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
                 }
 
@@ -133,7 +134,7 @@ int main() {
                     drawUI.createRect(&output_rect, reg.output_color, reg.winX - drawUI.sidebar_width - 20, reg.output_rect_pos - 10, drawUI.sidebar_width + 10, 10);
                     drawUI.createRect(&input_rect, reg.sidebar_color, (reg.winX - drawUI.sidebar_width) - 20, reg.input_rect_pos, drawUI.sidebar_width + 10, reg.output_rect_pos + 10);
                     drawUI.createRect(&side_rect, reg.sidebar_color, drawUI.sidebar_width, reg.winY, 0, 0);
-                    reg.text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
+                    text.setPosition(Vector2f(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top + 5));
                     thread_struct.output_rect = &output_rect;
                     history_dialog(&history, &reg.font, thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, &settings_struct);
                 }
@@ -147,94 +148,60 @@ int main() {
 
             }
 
-        /* Collision cursor with UI */ 
+        /* Click on UI elements */ 
+        
             if(event.type == Event::MouseButtonReleased) 
                 if(event.mouseButton.button == Mouse::Left) {
                     Vector2i mouse_pos = Mouse::getPosition(window);
 
-                    reg.text.setFillColor(reg.line_color);
+                    text.setFillColor(reg.line_color);
                     if(reg.message.getSize() == 0) {
                         reg.message = "Enter a message...";
-                        reg.text.setString(reg.message);
+                        text.setString(reg.message);
                     }
                     
                 // input_rect
-                    if(reg.state == CHAT_STATE && input_rect.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
+                    if(ui.checkToClickRect(&window, &input_rect)) {
                         if(reg.message == "Enter a message...") {
                             reg.message.clear();
-                            // reg.text.setString(reg.message);
-                            reg.text.setString("");
+                            text.setString("");
                         }
                         reg.write_flag = 1;
-                        reg.text.setFillColor(Color::White);
+                        text.setFillColor(Color::White);
                     }
                     else
                         reg.write_flag = 0;
 
                 // Sidebar buttons
-                    if(ui.settings_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        cout << "SETTINGS_STATE" << endl;
+                    if(ui.checkToClickSprite(&window, &ui.settings_button)) {
+                        logl("SETTINGS_STATE");
                         reg.state = SETTINGS_STATE;
-                        ui.settings_button.setTexture(reg.settings_active_texture);
-                        ui.chats_button.setTexture(reg.chats_texture);
-                        ui.contacts_button.setTexture(reg.contacts_texture);
+                        ui.changeTexture(&reg.settings_active_texture, &reg.chats_texture, &reg.contacts_texture);
                     }
-                    if(ui.chats_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        cout << "CHAT_STATE" << endl;
+                    if(ui.checkToClickSprite(&window, &ui.chats_button)) {
+                        logl("CHAT_STATE");
                         reg.state = CHAT_STATE;
-                        ui.settings_button.setTexture(reg.settings_texture);
-                        ui.chats_button.setTexture(reg.chats_active_texture);
-                        ui.contacts_button.setTexture(reg.contacts_texture);
+                        ui.changeTexture(&reg.settings_texture, &reg.chats_active_texture, &reg.contacts_texture);
                     }
-                    if(ui.contacts_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        cout << "CONTACTS_STATE" << endl;
+                    if(ui.checkToClickSprite(&window, &ui.contacts_button)) {
+                        logl("CONTACTS_STATE");
                         reg.state = CONTACTS_STATE;
-                        ui.settings_button.setTexture(reg.settings_texture);
-                        ui.chats_button.setTexture(reg.chats_texture);
-                        ui.contacts_button.setTexture(reg.contacts_active_texture);
+                        ui.changeTexture(&reg.settings_texture, &reg.chats_texture, &reg.contacts_active_texture);
                     }
+                    
+                // Menu or Add chat button
+                    if(reg.menu_flag || reg.add_chat_flag)
+                        ui.checkToClickMenuButtons(&window);
 
-                // Add chat button
-                    if(reg.add_chat_flag) {
-                        if(ui.menu_add_contact.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "add contact" << endl;
-                        }
-                        if(ui.menu_add_group.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "add group" << endl;
-                        }
-                        if(ui.menu_add_channel.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "add channel" << endl;
-                        }
-                        if(ui.menu_read_all.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "read all" << endl;
-                        }
-                    }
-
-                    if(ui.add_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        cout << "add_chat_button" << endl;
+                    if(ui.checkToClickSprite(&window, &ui.add_button)) {
+                        logl("add_chat_button");
                         reg.add_chat_flag++;
                     }
                     else
                         reg.add_chat_flag = 0;
 
-                // Menu button
-                    if(reg.menu_flag) {
-                        if(ui.menu_add_contact.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "menu_add_contact_func" << endl;
-                        }
-                        if(ui.menu_add_group.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "menu_add_group" << endl;
-                        }
-                        if(ui.menu_add_channel.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "menu_add_channel" << endl;
-                        }
-                        if(ui.menu_read_all.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                            cout << "menu_read_all" << endl;
-                        }
-                    }
-
-                    if(ui.menu_button.getGlobalBounds().contains(mouse_pos.x, mouse_pos.y)) {
-                        cout << "menu_button" << endl;
+                    if(ui.checkToClickSprite(&window, &ui.menu_button)) {
+                        logl("menu_button");
                         reg.menu_flag++;
                     }
                     else
@@ -245,19 +212,19 @@ int main() {
             if(reg.write_flag) {   
                 if (event.type == Event::TextEntered) {
                     if (event.text.unicode >= 32 && event.text.unicode <= 126) {
-                        // cout << "Character typed: " << static_cast<char>(event.text.unicode) << endl;
+                        // logl("Character typed: " + static_cast<char>(event.text.unicode));
 
-                        stringsLexemes = static_cast<int>(reg.message.getSize() * reg.text.getCharacterSize() / 2) % static_cast<int>(input_rect.getGlobalBounds().width);
+                        stringsLexemes = static_cast<int>(reg.message.getSize() * text.getCharacterSize() / 2) % static_cast<int>(input_rect.getGlobalBounds().width);
 
                         if(stringsLexemes == 1 || stringsLexemes == 2 || stringsLexemes == 3) {
-                            reg.text.setPosition(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top);
+                            text.setPosition(input_rect.getGlobalBounds().left + 10, input_rect.getGlobalBounds().top);
                             reg.message.insert(reg.message.getSize(), "\n");
                             stringsCount++;
                         }
 
                         if(stringsCount < 3) {
                             reg.message.insert(reg.message.getSize(), event.text.unicode);
-                            reg.text.setString(reg.message);
+                            text.setString(reg.message);
                         }
                     }
                 }
@@ -265,7 +232,7 @@ int main() {
                 if (event.type == Event::KeyPressed) {
                     if (event.key.code == Keyboard::Enter) {
                         if(reg.message.getSize() > 0) {
-                            cout << "message: " << reg.message.toAnsiString() << endl;
+                            logl("message: " + reg.message.toAnsiString());
                             reg.message.insert(reg.message.getSize(), " ");
                             // if(history != NULL)
                             //     fprintf(history, "%s: %s\n", settings_struct.username, reg.message.getData());
@@ -285,7 +252,7 @@ int main() {
                                 drawUI.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, reg.message.toAnsiString().c_str(), 1);
                                 sendPacket.clear();
                                 reg.message.clear();
-                                reg.text.setString(reg.message);
+                                text.setString(reg.message);
                             }
                             else
                                 die_With_Error(DEVICE, "Failed to send a message to server!");
@@ -293,7 +260,7 @@ int main() {
                     } 
                     if(event.key.code == Keyboard::BackSpace && reg.message.getSize() > 0) {
                         reg.message.erase(reg.message.getSize() - 1);
-                        reg.text.setString(reg.message);
+                        text.setString(reg.message);
                     }
                 }
             }
@@ -314,13 +281,13 @@ int main() {
             ui.drawMenu(&window, &add_contact_text, &add_group_text, &add_channel_text, &read_all_text);
             
             window.draw(search);
-            window.draw(reg.search_text);
+            window.draw(search_text);
         }
 
         switch(reg.state) {
             case CHAT_STATE:
                 window.draw(input_rect);
-                window.draw(reg.text);
+                window.draw(text);
 
                 for (int i = 0; i < dialog_count; i++) {
                     window.draw(thread_struct.output_text_rect[i]);
@@ -347,7 +314,7 @@ void output_thread_func(TcpSocket *socket) {
     while (true) {
         if (socket->receive(receivePacket) == Socket::Done) {
             receivePacket >> received_string;
-            cout << "Received: \"" << received_string.toAnsiString() << "\" (" << received_string.getSize() << " bytes)" << endl;
+            // logl("Received: \"" + received_string.toAnsiString() + "\" (" + received_string.getSize() + " bytes)");
 
             mutex.lock();
             drawUI.createMessageRect(&thread_struct.font, &thread_struct.output_rect, thread_struct.output_text_rect, thread_struct.recv_text, received_string.toAnsiString().c_str(), 0);

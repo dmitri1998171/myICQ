@@ -2,7 +2,6 @@
 
 class IGUI : IDrawUI {
     public:
-        // IDrawUI gui;
         Registry reg;
         
         RectangleShape menu, menu_add_contact, menu_add_group, 
@@ -14,10 +13,14 @@ class IGUI : IDrawUI {
         Sprite menu_add_contact_sprite, menu_add_group_sprite,
         menu_add_channel_sprite, menu_read_all_sprite;
 
-        void addBackground(RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*);
+        void addBackground(RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*);
         void addMenu(Text*, Text*, Text*, Text*);
         void addUI(RectangleShape*, RectangleShape*, RectangleShape*);
         void changeMenuPosition(int, Text*, Text*, Text*, Text*);
+        void changeTexture(Texture*, Texture*, Texture*);
+        int checkToClickSprite(RenderWindow*, Sprite*);
+        int checkToClickRect(RenderWindow*, RectangleShape*);
+        void checkToClickMenuButtons(RenderWindow*);
         void drawBackground(RenderWindow*, RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*, RectangleShape*);
         void drawGrandButtons(RenderWindow*, Text*, Text*, Text*);
         void drawMenuRects(RenderWindow*);
