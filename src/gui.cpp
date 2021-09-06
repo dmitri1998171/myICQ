@@ -1,6 +1,6 @@
 #include "gui.hpp"
 
-void IGUI::addBackground(RectangleShape* background, RectangleShape* output_rect, RectangleShape* input_rect, RectangleShape* side_rect, RectangleShape* line, RectangleShape* search) {
+void IGUI::addBackground(RectangleShape* background, RectangleShape* output_rect, RectangleShape* input_rect, RectangleShape* side_rect, RectangleShape* line, RectangleShape* search) {   
     createRect(background, reg.output_color, WIDTH, HEIGHT, 0, 0);
     createRect(output_rect, reg.output_color, (WIDTH - sidebar_width) - 20, reg.output_rect_pos - 10, sidebar_width + 10, 10);
     createCircleAngleRect(input_rect, reg.sidebar_color, (WIDTH - sidebar_width) - 20, reg.input_rect_pos, sidebar_width + 10, reg.output_rect_pos + 10);

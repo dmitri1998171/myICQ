@@ -1,4 +1,4 @@
-#include "gui.hpp"
+#include "GameModel.hpp"
 
 #define DEVICE "CLIENT"
 
@@ -51,7 +51,7 @@ void network_func(TcpSocket* socket) {
 
 void history_dialog(FILE** history, Font* font, RectangleShape* output_rect, RectangleShape* output_text_rect, Text* recv_text, struct Settings *settings_struct) {
     IDrawUI gui;
-    Registry reg;
+    // Registry reg;
 
     ifstream in("history.txt"); 
     if(in.is_open()) {
@@ -90,4 +90,12 @@ void splitString(string str, string tokens[]) {
         i++;
     }
     tokens[i] = str;
+}
+
+void setDate(string *systemTime, string date_time[6], string *date) {
+  splitString(*systemTime, date_time);
+
+  for(int i = 0; i < 6; i++) 
+    if(i != 3) 
+      date->append(date_time[i] + " ");
 }

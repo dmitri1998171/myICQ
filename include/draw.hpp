@@ -6,7 +6,6 @@ class IDrawUI {
         int menu_x = 45, menu_y = 5, menu_w = 160, menu_h = 200;
         int menu_button_h = (menu_h / 4);
 
-        Registry reg;
         Assets* assets = Assets::getInstance();
 
         void addText(Font*, Text*, String, Color, float, float);
